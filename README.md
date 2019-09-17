@@ -17,7 +17,7 @@ The general concept of PDU conversion using this module is shown below:
 
 ![basic_pdu.png](docs/figures/basic_pdu.png "Basic PDU Flowgraph")
 
-asdf
+TODO
 
 
 ### General Concept of High Fidelity FHSS Signal Dehopping
@@ -28,18 +28,6 @@ The dataset dehopper blocks were designed to quickly allow for good accuracy deh
 
 This has been implemented without use of OOT DSP, though the module has python hier blocks that are installed with the build. Alternately there are GRC hier blocks located in the _gr-fhss_utils/examples/hier_blocks/_ directory
 
-### Usage of Significant blocks
-
-The usage of a number of significant blocks are described in this section. Many blocks are omitted as their behavior is straightforward or documented in the GRC XML sufficiently.
-
-##### ___GR FHSS Utils - Block X___
-
-![block_x.png](docs/figures/block_x.png "Block X")
-
-__Basic Usage:__ The _Block X_ block accepts...
-
-__Optional Burst Identification Parameters:__ The _Block X_ block can be configured ...
-
 ### In Progress Work and Future TODO
 
-There are several features under development.
+There are several features under development, as well as documentation.
