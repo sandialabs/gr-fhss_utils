@@ -1,0 +1,160 @@
+<?xml version="1.0"?>
+<block>
+  <name>FSK Burst Extractor Hier</name>
+  <key>fsk_burst_extractor_hier</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.fsk_burst_extractor_hier(
+    burst_width=$burst_width,
+    center_freq=$center_freq,
+    decimation=$decimation,
+    fft_size=$fft_size,
+    hist_time=$hist_time,
+    lookahead_time=$lookahead_time,
+    max_burst_time=$max_burst_time,
+    min_burst_time=$min_burst_time,
+    output_attenuation=$output_attenuation,
+    output_cutoff=$output_cutoff,
+    output_trans_width=$output_trans_width,
+    post_burst_time=$post_burst_time,
+    pre_burst_time=$pre_burst_time,
+    samp_rate=$samp_rate,
+    threshold=$threshold,
+    cfo_samps_to_average=$cfo_samps_to_average,
+    cfo_bin_resolution=10000
+)</make>
+  <param>
+    <name>Sample Rate [Hz]</name>
+    <key>samp_rate</key>
+    <value>samp_rate</value>
+    <type>int</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Center Frequency [Hz]</name>
+    <key>center_freq</key>
+    <value>center_freq</value>
+    <type>float</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Decimation</name>
+    <key>decimation</key>
+    <value>32</value>
+    <type>int</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>FFT Size</name>
+    <key>fft_size</key>
+    <value>256</value>
+    <type>int</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Threshold [dB]</name>
+    <key>threshold</key>
+    <value>6</value>
+    <type>real</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Burst Width [Hz]</name>
+    <key>burst_width</key>
+    <value>int(500e3)</value>
+    <type>int</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>History Time [s]</name>
+    <key>hist_time</key>
+    <value>0.004</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Lookahead Time [s]</name>
+    <key>lookahead_time</key>
+    <value>0.0005</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Max Burst Time [s]</name>
+    <key>max_burst_time</key>
+    <value>0.5</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Min Burst Time [s]</name>
+    <key>min_burst_time</key>
+    <value>0.001</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Pre Burst Time [s]</name>
+    <key>pre_burst_time</key>
+    <value>0.00008</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Post Burst Time [s]</name>
+    <key>post_burst_time</key>
+    <value>0.00008</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Output Cutoff [cycles/samp]</name>
+    <key>output_cutoff</key>
+    <value>0.5</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Output Trans. Width [cycles/samp]</name>
+    <key>output_trans_width</key>
+    <value>0.05</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Output Attenuation</name>
+    <key>output_attenuation</key>
+    <value>40</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+
+  <param>
+    <name>CFO Samps to Avg</name>
+    <key>cfo_samps_to_average</key>
+    <value>2048</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>CFO Bin Resolution</name>
+    <key>cfo_bin_resolution</key>
+    <value>10000</value>
+    <type>real</type>
+    <hide>part</hide>
+  </param>
+
+  <check>$decimation % 2 == 0</check>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+    <vlen>1</vlen>
+  </sink>
+
+  <source>
+    <name>pdu_out</name>
+    <type>message</type>
+  </source>
+</block>
+

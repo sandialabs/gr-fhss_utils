@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<block>
+  <name>FFT Peak</name>
+  <key>fhss_utils_fft_peak</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.fft_peak($fft_len)</make>
+
+  <callback>set_fft_len($fft_len)</callback>
+
+  <param>
+    <name>FFT Length</name>
+    <key>fft_len</key>
+    <value>32</value>
+    <type>raw</type>
+    <hide>none</hide>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+    <vlen>1</vlen>
+  </sink>
+
+  <source>
+    <name>max_i</name>
+    <type>float</type>
+    <vlen>1</vlen>
+  </source>
+  <source>
+    <name>fft</name>
+    <type>float</type>
+    <vlen>1</vlen>
+    <optional>1</optional>
+  </source>
+
+  <doc>This block computes the peak magnitude FFT index.</doc>
+
+</block>

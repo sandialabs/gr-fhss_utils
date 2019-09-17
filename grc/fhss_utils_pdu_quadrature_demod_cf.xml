@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<block>
+  <name>PDU Quadrature Demod</name>
+  <key>fhss_utils_pdu_quadrature_demod_cf</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.pdu_quadrature_demod_cf($taps, $sensitivity)</make>
+
+  <param>
+    <name>Sensitivity</name>
+    <key>sensitivity</key>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Input Taps</name>
+    <key>taps</key>
+    <type>real_vector</type>
+  </param>
+
+  <sink>
+    <name>cpdus</name>
+    <type>message</type>
+  </sink>
+
+  <source>
+    <name>fpdus</name>
+    <type>message</type>
+  </source>
+
+</block>

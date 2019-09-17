@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<block>
+  <name>FFT CFO Estimate</name>
+  <key>fhss_utils_fft_cfo_estimate</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.fft_cfo_estimate($fftsize, $offset, $nffts, $threshold, $valid_freqs)</make>
+
+  <callback>set_freqs($valid_freqs)</callback>
+
+  <param>
+    <name>FFT Size</name>
+    <key>fftsize</key>
+    <value>1024</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>nFFTs</name>
+    <key>nffts</key>
+    <value>32</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Offset</name>
+    <key>offset</key>
+    <value>0</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Threshold</name>
+    <key>threshold</key>
+    <value>3.0</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Valid Freqs</name>
+    <key>valid_freqs</key>
+    <value>[]</value>
+    <type>float_vector</type>
+  </param>
+
+  <sink>
+    <name>pdu_in</name>
+    <type>message</type>
+  </sink>
+
+  <source>
+    <name>pdu_out</name>
+    <type>message</type>
+  </source>
+
+  <doc>
+Estimates and corrects the CFO of a complex PDU burst.
+
+Does this by skipping the first offset samples, then taking nffts sequential FFTs of size fftsize. The magnitude spectra are averaged. The CFO is taken to be the median of the bins which are within threshold dB of the maximum magnitude.
+
+The output is frequency shifted by the CFO estimate.
+  </doc>
+
+</block>

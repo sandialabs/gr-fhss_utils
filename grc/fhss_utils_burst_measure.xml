@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<block>
+  <name>Burst Measure</name>
+  <key>fhss_utils_burst_measure</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.burst_measure()</make>
+
+  <sink>
+    <name>cpdus</name>
+    <type>message</type>
+  </sink>
+
+  <source>
+    <name>cpdus</name>
+    <type>message</type>
+    <optional>1</optional>
+  </source>
+
+  <doc>
+This block performs signal energy and bandwidth estimates on downmixed bursts.
+This block is meant to follow the Burst Downmix block.
+
+There are no parameters, since all necessary information is in the PDU metadata.
+Measurements are added to the PDU metadata.
+  </doc>
+
+</block>

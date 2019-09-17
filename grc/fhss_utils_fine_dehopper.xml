@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<block>
+  <name>Fine Dehopper</name>
+  <key>fhss_utils_fine_dehopper</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.fine_dehopper($bias, $freq_sample_delay_samps, $freq_samps_to_avg, $mag_samps_to_avg, $resamp_rate, $thresh)</make>
+
+  <callback>set_bias($bias)</callback>
+  <callback>set_freq_sample_delay_samps($freq_sample_delay_samps)</callback>
+  <callback>set_freq_samps_to_avg($freq_samps_to_avg)</callback>
+  <callback>set_mag_samps_to_avg($mag_samps_to_avg)</callback>
+  <callback>set_resamp_rate($resamp_rate)</callback>
+  <callback>set_thresh($thresh)</callback>
+
+  <param>
+    <name>Bit Bias</name>
+    <key>bias</key>
+    <value>0</value>
+    <type>raw</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Freq S&amp;H Delay</name>
+    <key>freq_sample_delay_samps</key>
+    <value>128</value>
+    <type>raw</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Freq Avg Samples</name>
+    <key>freq_samps_to_avg</key>
+    <value>128</value>
+    <type>raw</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Mag Avg Samples</name>
+    <key>mag_samps_to_avg</key>
+    <value>128</value>
+    <type>raw</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Resampler Rate</name>
+    <key>resamp_rate</key>
+    <value>.125</value>
+    <type>raw</type>
+    <hide>none</hide>
+  </param>
+  <param>
+    <name>Threshold</name>
+    <key>thresh</key>
+    <value>0.005</value>
+    <type>raw</type>
+    <hide>none</hide>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+    <vlen>1</vlen>
+  </sink>
+
+  <source>
+    <name>out</name>
+    <type>complex</type>
+    <vlen>1</vlen>
+  </source>
+
+  <doc>Fine Dehopper</doc>
+
+</block>

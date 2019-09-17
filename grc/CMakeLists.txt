@@ -1,0 +1,35 @@
+# Copyright 2011 Free Software Foundation, Inc.
+#
+# This file is part of GNU Radio
+#
+# GNU Radio is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GNU Radio is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GNU Radio; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street,
+# Boston, MA 02110-1301, USA.
+
+install(FILES
+    fhss_utils_fft_peak.xml
+    fhss_utils_s_and_h_detector.xml
+    fhss_utils_coarse_dehopper.xml
+    fhss_utils_fine_dehopper.xml
+    fhss_utils_fft_burst_tagger.xml
+    fhss_utils_tagged_burst_to_pdu.xml
+    fhss_utils_burst_downmix.xml
+    fhss_utils_pdu_quadrature_demod_cf.xml
+    fhss_utils_burst_measure.xml
+    fhss_utils_fsk_burst_extractor_hier.xml
+    fhss_utils_fsk_cfo_estimate.xml
+    fhss_utils_fine_burst_measure.xml
+    fhss_utils_fft_cfo_estimate.xml
+    fhss_utils_coerce_frequency_estimate.xml DESTINATION share/gnuradio/grc/blocks
+)

@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<block>
+  <name>Coerce Frequency</name>
+  <key>fhss_utils_coerce_frequency_estimate</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.coerce_frequency_estimate($valid_freqs)</make>
+
+  <callback>set_freqs($valid_freqs)</callback>
+
+  <param>
+    <name>Valid Freqs</name>
+    <key>valid_freqs</key>
+    <type>float_vector</type>
+  </param>
+
+  <sink>
+    <name>cpdus</name>
+    <type>message</type>
+  </sink>
+
+  <source>
+    <name>cpdus</name>
+    <type>message</type>
+    <optional>1</optional>
+  </source>
+
+  <doc>
+This block will coerce the frequency estimate to the nearest one in a provided list.
+  </doc>
+
+</block>

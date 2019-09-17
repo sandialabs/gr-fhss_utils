@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<block>
+  <name>Fine Burst Measure</name>
+  <key>fhss_utils_fine_burst_measure</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.fine_burst_measure($freq_resolution, $samples, $threshold)</make>
+
+  <param>
+    <name>Frequency Resolution</name>
+    <key>freq_resolution</key>
+    <value>4000</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Analysis Samples</name>
+    <key>samples</key>
+    <value>2048</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Threshold</name>
+    <key>threshold</key>
+    <value>0.5</value>
+    <type>float</type>
+  </param>
+
+  <sink>
+    <name>pdu_in</name>
+    <type>message</type>
+  </sink>
+
+  <source>
+    <name>pdu_out</name>
+    <type>message</type>
+  </source>
+
+  <doc>
+Estimates burst metrics.
+  </doc>
+
+</block>
