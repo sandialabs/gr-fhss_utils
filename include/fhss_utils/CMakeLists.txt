@@ -16,11 +16,9 @@
 # along with GNU Radio; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
+include(GrMiscUtils)
 
-########################################################################
-# Install public header files
-########################################################################
-install(FILES
+list(APPEND include_sources
     api.h
     fft_burst_tagger.h
     tagged_burst_to_pdu.h
@@ -30,5 +28,17 @@ install(FILES
     fine_burst_measure.h
     fsk_cfo_estimate.h
     fft_cfo_estimate.h
-    coerce_frequency_estimate.h DESTINATION include/fhss_utils
+    coerce_frequency_estimate.h
+)
+
+add_custom_target(fhss_utils_generated_includes DEPENDS
+	$(generate_includes)
+)
+
+########################################################################
+# Install public header files
+########################################################################
+install(FILES
+    ${include_sources}
+    DESTINATION include/fhss_utils
 )

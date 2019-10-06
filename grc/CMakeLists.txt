@@ -18,18 +18,18 @@
 # Boston, MA 02110-1301, USA.
 
 install(FILES
-    fhss_utils_fft_peak.xml
-    fhss_utils_s_and_h_detector.xml
-    fhss_utils_coarse_dehopper.xml
-    fhss_utils_fine_dehopper.xml
-    fhss_utils_fft_burst_tagger.xml
-    fhss_utils_tagged_burst_to_pdu.xml
-    fhss_utils_burst_downmix.xml
-    fhss_utils_pdu_quadrature_demod_cf.xml
-    fhss_utils_burst_measure.xml
-    fhss_utils_fsk_burst_extractor_hier.xml
-    fhss_utils_fsk_cfo_estimate.xml
-    fhss_utils_fine_burst_measure.xml
-    fhss_utils_fft_cfo_estimate.xml
-    fhss_utils_coerce_frequency_estimate.xml DESTINATION share/gnuradio/grc/blocks
+    fhss_utils_fft_peak.block.yml
+    fhss_utils_s_and_h_detector.block.yml
+    fhss_utils_coarse_dehopper.block.yml
+    fhss_utils_fine_dehopper.block.yml
+    fhss_utils_fft_burst_tagger.block.yml
+    fhss_utils_tagged_burst_to_pdu.block.yml
+    fhss_utils_burst_downmix.block.yml
+    fhss_utils_pdu_quadrature_demod_cf.block.yml
+    fhss_utils_burst_measure.block.yml
+    fhss_utils_fsk_burst_extractor_hier.block.yml
+    fhss_utils_fsk_cfo_estimate.block.yml
+    fhss_utils_fine_burst_measure.block.yml
+    fhss_utils_fft_cfo_estimate.block.yml
+    fhss_utils_coerce_frequency_estimate.block.yml DESTINATION share/gnuradio/grc/blocks
 )
