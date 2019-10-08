@@ -22,7 +22,6 @@
 This is the GNU Radio FHSS_UTILS module. Place your Python package
 description here (python/__init__.py).
 '''
-from __future__ import unicode_literals
 
 # import swig generated symbols into the fhss_utils namespace
 try:
