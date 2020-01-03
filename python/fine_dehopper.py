@@ -27,7 +27,7 @@ from gnuradio.filter import firdes
 from gnuradio.filter import pfb
 from math import pi
 import math
-from s_and_h_detector import s_and_h_detector  # hier_block
+from .s_and_h_detector import s_and_h_detector  # hier_block
 
 class fine_dehopper(gr.hier_block2):
     """

@@ -23,7 +23,7 @@
 """
 
 import re, os, os.path
-from build_utils_codes import *
+from .build_utils_codes import *
 
 
 # set srcdir to the directory that contains Makefile.am

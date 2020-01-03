@@ -25,8 +25,8 @@ from gnuradio import filter
 from gnuradio.filter import firdes
 from gnuradio.filter import pfb
 from math import pi
-from fft_peak import fft_peak  # hier_block
-from s_and_h_detector import s_and_h_detector  # hier_block
+from .fft_peak import fft_peak  # hier_block
+from .s_and_h_detector import s_and_h_detector  # hier_block
 
 
 class coarse_dehopper(gr.hier_block2):
