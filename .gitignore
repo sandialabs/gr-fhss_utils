@@ -48,3 +48,6 @@ Thumbs.db
 ######################
 build
 build/*
+/.cproject
+/.project
+/.pydevproject

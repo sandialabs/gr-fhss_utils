@@ -22,8 +22,10 @@ from gnuradio import gr
 from gnuradio import blocks
 from gnuradio.filter import firdes
 import fhss_utils
+from .fhss_utils_swig import RMS
+from .fhss_utils_swig import HALF_POWER
+from .fhss_utils_swig import COERCE
 import pdu_utils
-
 
 class fsk_burst_extractor_hier(gr.hier_block2):
   """
@@ -74,16 +76,41 @@ class fsk_burst_extractor_hier(gr.hier_block2):
   def __init__(self, burst_width=int(500e3), center_freq=915e6, decimation=32,
                fft_size=256, hist_time=0.004, lookahead_time=0.0005,
                max_burst_time=0.5, min_burst_time=0.001,
-               output_attenuation=40, output_cutoff=0.26,
-               output_trans_width=0.4, post_burst_time=0.00008,
+               output_attenuation=40, output_cutoff=0.25,
+               output_trans_width=0.1, post_burst_time=0.00008,
                pre_burst_time=0.00008, samp_rate=int(16e6),
-               cf_method = fhss_utils.RMS,
-               threshold=6, channel_freqs = []):
+               threshold=10,
+               cf_method = RMS, channel_freqs = [],
+               n_threads = 3):
       gr.hier_block2.__init__(
           self, "FSK Burst Extractor Hier",
           gr.io_signature(1, 1, gr.sizeof_gr_complex*1),
           gr.io_signature(0, 0, 0),
       )
+      '''
+      Constructor
+      
+      @param burst_width - max burst bandwidth, Hz
+      @param center_freq - 
+      @param decimation - 
+      @param fft_size - 
+      @param hist_time - 
+      @param lookahead_time - 
+      @param max_burst_time - 
+      @param min_burst_time - 
+      @param output_attenuation - 
+      @param output_cutoff -
+      @param output_trans_width - 
+      @param post_burst_time - 
+      @param pre_burst_time - 
+      @param samp_rate - 
+      @param threshold - 
+      @param cf_method - Center Frequency estimation method
+      @param channel_freqs - CF Coerce freq list
+      @param n_threads - 
+      '''
+      
+      
       self.message_port_register_hier_out("pdu_out")
 
       ##################################################
@@ -106,6 +133,7 @@ class fsk_burst_extractor_hier(gr.hier_block2):
       self.threshold = threshold
       self.channel_freqs = channel_freqs
       self.cf_method = cf_method
+      self.n_threads = n_threads
 
       ##################################################
       # Blocks
@@ -116,7 +144,7 @@ class fsk_burst_extractor_hier(gr.hier_block2):
 
       # This is a coarse filter,  Allow for transition band to alias onto itself.
       taps = firdes.low_pass_2(1, 1, .45 / decimation, .1 / decimation, output_attenuation)
-      self.fhss_utils_tagged_burst_to_pdu_0 = fhss_utils.tagged_burst_to_pdu(decimation, taps, min_burst_time, max_burst_time, 0.0, 1.0, 1.0, samp_rate, 3)
+      self.fhss_utils_tagged_burst_to_pdu_0 = fhss_utils.tagged_burst_to_pdu(decimation, taps, min_burst_time, max_burst_time, 0.0, 1.0, 1.0, samp_rate, n_threads)
       self.fhss_utils_fft_burst_tagger_0 = fhss_utils.fft_burst_tagger(center_freq, fft_size, samp_rate, int(round((float(samp_rate)/fft_size)*pre_burst_time)), int(round((float(samp_rate)/fft_size)*post_burst_time)), burst_width, 0, 0, threshold, int(round((float(samp_rate)/fft_size)*hist_time)), int(round((float(samp_rate)/fft_size)*lookahead_time)), False)
       #(self.fhss_utils_fft_burst_tagger_0).set_min_output_buffer(102400)
       self.cf_estimate = fhss_utils.cf_estimate(self.cf_method, self.channel_freqs)

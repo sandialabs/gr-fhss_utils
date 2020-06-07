@@ -27,17 +27,27 @@ from gnuradio.filter import firdes
 from gnuradio.filter import pfb
 from math import pi
 import math
-from s_and_h_detector import s_and_h_detector  # hier_block
+from .s_and_h_detector import s_and_h_detector  # hier_block
 
 class fine_dehopper(gr.hier_block2):
     """
-    docstring for block fine_dehopper
+    Fine Dehopper module
     """
     def __init__(self, bias, freq_sample_delay_samps, freq_samps_to_avg, mag_samps_to_avg, resamp_rate, thresh):
         gr.hier_block2.__init__(self,
             "Fine Dehopper",
             gr.io_signature(1, 1, gr.sizeof_gr_complex*1),
             gr.io_signature(1, 1, gr.sizeof_gr_complex*1))
+        '''
+        Constructor
+        
+        @param bias - 
+        @param freq_sample_delay_samps -
+        @param freq_samps_to_avg - 
+        @param mag_samps_to_avg - 
+        @param resamp_rate - 
+        @param thresh - 
+        '''
 
         ##################################################
         # Parameters

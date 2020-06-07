@@ -34,6 +34,11 @@ class fft_peak(gr.hier_block2):
             "FFT Peak",
             gr.io_signature(1, 1, gr.sizeof_gr_complex*1),
             gr.io_signaturev(2, 2, [gr.sizeof_float*1, gr.sizeof_float*1]))
+        '''
+        Constructor
+        
+        @param fft_len -
+        '''
 
         ##################################################
         # Parameters

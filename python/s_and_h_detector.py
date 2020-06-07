@@ -26,13 +26,22 @@ import timing_utils
 
 class s_and_h_detector(gr.hier_block2):
     """
-    docstring for block s_and_h_detector
+    Sample and hold detector block.
     """
     def __init__(self, freq_sample_delay_samps, freq_samps_to_avg, mag_samps_to_avg, thresh):
         gr.hier_block2.__init__(self,
             "Sample and Hold Detector",
             gr.io_signaturev(2, 2, [gr.sizeof_float*1, gr.sizeof_float*1]),
             gr.io_signaturev(4, 4, [gr.sizeof_float*1, gr.sizeof_float*1, gr.sizeof_float*1, gr.sizeof_float*1]))
+        '''
+        Constructor
+        
+        @param freq_sample_delay_samps - 
+        @param freq_samps_to_avg - 
+        @param mag_samps_to_avg - 
+        @param thresh - 
+        
+        '''
 
         ##################################################
         # Parameters
