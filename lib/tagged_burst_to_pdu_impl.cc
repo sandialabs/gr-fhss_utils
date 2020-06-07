@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018 National Technology & Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
+ * Copyright 2018 <+YOU OR YOUR COMPANY+>.
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,6 @@ namespace gr {
           d_blocked(false),
           d_decimation(decimation),
           d_taps(taps),
-          d_input_fir(0, taps),
           d_write_queue(6),
           d_work_queue(6),
           d_sample_rate(sample_rate),
@@ -79,6 +78,13 @@ namespace gr {
       d_rx_time_tags.push(d_current_rx_time_tag);
       d_block_increment = ((d_block_size - taps.size() + 1) / d_decimation) * d_decimation;
 
+      // create enough fir_filters so that each thread can have one
+      // This is necessary because fir_filter_ccf is not re-entrant.
+      for (size_t i = 0; i < d_num_threads; i++) {
+        filter::kernel::fir_filter_ccf *f = new filter::kernel::fir_filter_ccf(0,taps);
+        d_input_fir_filters.push_back(f);
+      }
+
       process_thread = new boost::thread(boost::bind(&tagged_burst_to_pdu_impl::process_data, this));
 
       // Create work buffers
@@ -93,6 +99,11 @@ namespace gr {
       // calculation.  The filter function always starts at the first input point, so we need to
       // throw away some filter tail points to ensure that.
       printf("filter len = %zu\n", d_taps.size());
+
+      // since this is a sync block, setting this field also ensures we have the input buffer as a multiple of
+      // this size. In order to use this block after the fft_burst_tagger, we want this to be set here to avoid
+      // the error: "Buffer too small for min_noutput_items" without having to set min_noutput_items in the flowgraph
+      set_output_multiple(d_block_size);
 
       //message_port_register_in(pmt::mp("burst_handled"));
       //set_msg_handler(pmt::mp("burst_handled"), boost::bind(&tagged_burst_to_pdu_impl::burst_handled, this, _1));
@@ -113,6 +124,10 @@ namespace gr {
       for (auto burst : d_bursts) {
         free(burst.second.data);
         free(burst.second.rot_tmp - ROT_TMP_OFFSET);
+      }
+
+      for (auto fir : d_input_fir_filters) {
+        delete fir;
       }
 
     }
@@ -245,6 +260,7 @@ namespace gr {
           tag.value = pmt::dict_add(tag.value, META_SAMP_RATE, pmt::from_float(sample_rate));
           tag.value = pmt::dict_add(tag.value, META_RELATIVE_FREQ, pmt::from_float(relative_frequency * sample_rate * d_decimation));
           tag.value = pmt::dict_add(tag.value, META_START_TIME, pmt::from_double(start_time));
+          tag.value = pmt::dict_add(tag.value, META_START_OFFSET, pmt::from_uint64(tag.offset));
 
 
           burst_data burst = {id, start_offset, start_offset - work_buffer.start, magnitude, relative_frequency,
@@ -295,6 +311,7 @@ namespace gr {
           // Subtract off any samples from the end
           size_t offset = std::ceil((d_block_size - tag.offset + work_buffer.start) / (float)d_decimation);
           burst.len -= burst.len > offset ? offset : burst.len;
+          burst.dict = pmt::dict_add(burst.dict, META_END_OFFSET, pmt::from_uint64(tag.offset));
           if(burst.len >= d_min_burst_size) {
             if (id == 1) {
                 printf("id %lu: len = %zu %zu\n", id, burst.len, tag.offset);
@@ -318,7 +335,7 @@ namespace gr {
           if(burst.len >= d_min_burst_size) {
             publish_burst(burst);
           }
-          printf("Long Burst: %zu, len = %zu\n", burst.id, burst.len);
+          //printf("Long Burst: %zu, len = %zu\n", burst.id, burst.len);
           d_alloced_arrays.push(two_gr_complex(d_bursts[id].data, d_bursts[id].rot_tmp));
           removeNodes.push_back(id);
         }
@@ -381,7 +398,7 @@ namespace gr {
               size_t c_size = 0;
               if (block_size > block_offset) c_size = block_size - block_offset;
               burst.rotate.rotateN(burst.rot_tmp + rot_skip, input_data + rot_skip, input_size - rot_skip);
-              d_input_fir.filterNdec(burst.data + burst.len, burst.rot_tmp + data_skip, c_size, d_decimation);
+              d_input_fir_filters[omp_get_thread_num()]->filterNdec(burst.data + burst.len, burst.rot_tmp + data_skip, c_size, d_decimation);
               burst.rot_skip = d_block_size - d_block_increment;
               rot_skip = burst.rot_skip;
               memcpy(burst.rot_tmp, burst.rot_tmp + input_size - rot_skip, rot_skip * sizeof(burst.rot_tmp[0]));

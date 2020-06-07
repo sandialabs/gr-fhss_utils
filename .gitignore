@@ -13,6 +13,7 @@
 # Temp VI files #
 #################
 *~
+*.swp
 
 # Packages #
 ############
@@ -47,9 +48,3 @@ Thumbs.db
 ######################
 build
 build/*
-
-# unit test files #
-.unittests
-.unittests/*
-*.swp
-

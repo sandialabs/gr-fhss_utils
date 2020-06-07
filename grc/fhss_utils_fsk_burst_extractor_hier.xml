@@ -18,16 +18,19 @@
     output_trans_width=$output_trans_width,
     post_burst_time=$post_burst_time,
     pre_burst_time=$pre_burst_time,
-    samp_rate=$samp_rate,
+    samp_rate=int($samp_rate),
     threshold=$threshold,
-    cfo_samps_to_average=$cfo_samps_to_average,
-    cfo_bin_resolution=10000
+    cf_method=$cf_method,
+    channel_freqs=$channel_freqs
 )</make>
+
+  <callback>set_channel_freqs($channel_freqs)</callback>
+  <callback>set_cf_method($cf_method)</callback>
   <param>
     <name>Sample Rate [Hz]</name>
     <key>samp_rate</key>
     <value>samp_rate</value>
-    <type>int</type>
+    <type>float</type>
     <hide>none</hide>
   </param>
   <param>
@@ -110,14 +113,14 @@
   <param>
     <name>Output Cutoff [cycles/samp]</name>
     <key>output_cutoff</key>
-    <value>0.5</value>
+    <value>0.25</value>
     <type>real</type>
     <hide>part</hide>
   </param>
   <param>
     <name>Output Trans. Width [cycles/samp]</name>
     <key>output_trans_width</key>
-    <value>0.05</value>
+    <value>0.1</value>
     <type>real</type>
     <hide>part</hide>
   </param>
@@ -129,19 +132,35 @@
     <hide>part</hide>
   </param>
 
+  <!-- Frequency Estimation -->
   <param>
-    <name>CFO Samps to Avg</name>
-    <key>cfo_samps_to_average</key>
-    <value>2048</value>
-    <type>real</type>
+    <name>Method</name>
+    <key>cf_method</key>
+    <value>fhss_utils.RMS</value>
+    <type>int</type>
     <hide>part</hide>
+    <option>
+      <name>RMS</name>
+      <key>fhss_utils.RMS</key>
+    </option>
+    <option>
+      <name>Half-Power</name>
+      <key>fhss_utils.HALF_POWER</key>
+    </option>
+    <option>
+      <name>Coerce</name>
+      <key>fhss_utils.COERCE</key>
+    </option>
+    <tab>Freq. Est.</tab>
   </param>
+
   <param>
-    <name>CFO Bin Resolution</name>
-    <key>cfo_bin_resolution</key>
-    <value>10000</value>
-    <type>real</type>
+    <name>Channel Center Frequencies</name>
+    <key>channel_freqs</key>
+    <value>[]</value>
+    <type>real_vector</type>
     <hide>part</hide>
+    <tab>Freq. Est.</tab>
   </param>
 
   <check>$decimation % 2 == 0</check>
@@ -157,4 +176,3 @@
     <type>message</type>
   </source>
 </block>
-

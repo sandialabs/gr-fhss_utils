@@ -16,7 +16,6 @@
 # along with GNU Radio; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
-
 install(FILES
     fhss_utils_fft_peak.xml
     fhss_utils_s_and_h_detector.xml
@@ -29,7 +28,6 @@ install(FILES
     fhss_utils_burst_measure.xml
     fhss_utils_fsk_burst_extractor_hier.xml
     fhss_utils_fsk_cfo_estimate.xml
-    fhss_utils_fine_burst_measure.xml
     fhss_utils_fft_cfo_estimate.xml
-    fhss_utils_coerce_frequency_estimate.xml DESTINATION share/gnuradio/grc/blocks
+    fhss_utils_cf_estimate.xml DESTINATION share/gnuradio/grc/blocks
 )

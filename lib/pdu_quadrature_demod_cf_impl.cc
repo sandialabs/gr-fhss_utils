@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018 National Technology & Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
+ * Copyright 2018 <+YOU OR YOUR COMPANY+>.
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,9 +65,25 @@ namespace gr {
     void
     pdu_quadrature_demod_cf_impl::handle_pdu(pmt::pmt_t pdu)
     {
+      if (!pmt::is_pair(pdu)) {
+        GR_LOG_WARN(d_logger, "PDU is not a pair, dropping\n");
+        return;
+      }
+
       pmt::pmt_t samples = pmt::cdr(pdu);
+
+      if (!pmt::is_c32vector(samples)) {
+        GR_LOG_WARN(d_logger, "PDU is not f32vector, dropping\n");
+        return;
+      }
+
       size_t burst_size;
       const gr_complex * burst = (const gr_complex*)pmt::c32vector_elements(samples, burst_size);
+      if (burst_size < 2) {
+        GR_LOG_INFO(d_logger, boost::format("PDU of length %d is too short") % burst_size);
+        return;
+      }
+
       // Subtract off 1 from burst size because we do an offset for the conjugate multiply.
       burst_size--;
 

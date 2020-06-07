@@ -27,8 +27,7 @@ install(FILES
     burst_downmix.h
     pdu_quadrature_demod_cf.h
     burst_measure.h
-    fine_burst_measure.h
     fsk_cfo_estimate.h
     fft_cfo_estimate.h
-    coerce_frequency_estimate.h DESTINATION include/fhss_utils
+    cf_estimate.h DESTINATION include/fhss_utils
 )

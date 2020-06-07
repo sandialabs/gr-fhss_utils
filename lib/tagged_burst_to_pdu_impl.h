@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018 National Technology & Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
+ * Copyright 2018 <+YOU OR YOUR COMPANY+>.
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -119,7 +119,7 @@ namespace gr {
        std::queue<two_gr_complex> d_alloced_arrays;
        std::vector<float> d_taps;
        size_t d_decimation;
-       filter::kernel::fir_filter_ccf d_input_fir;
+       std::vector<filter::kernel::fir_filter_ccf*> d_input_fir_filters;
 
        boost::lockfree::queue<buffer*> d_write_queue;
        boost::lockfree::queue<buffer*> d_work_queue;
@@ -155,6 +155,8 @@ namespace gr {
        const pmt::pmt_t META_SAMP_RATE = pmt::mp("sample_rate");
        const pmt::pmt_t META_START_TIME = pmt::mp("start_time");
        const pmt::pmt_t META_DURATION = pmt::mp("duration");
+       const pmt::pmt_t META_START_OFFSET = pmt::mp("start_offset");
+       const pmt::pmt_t META_END_OFFSET = pmt::mp("end_offset");
 
        const pmt::pmt_t PDU_OUT_PORT = pmt::mp("cpdus");
 

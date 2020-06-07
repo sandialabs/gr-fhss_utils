@@ -24,18 +24,15 @@ include(GrPlatform) #define LIB_SUFFIX
 
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
-
 list(APPEND fhss_utils_sources
     fft_burst_tagger_impl.cc
     tagged_burst_to_pdu_impl.cc
     burst_downmix_impl.cc
     pdu_quadrature_demod_cf_impl.cc
     burst_measure_impl.cc
-    fine_burst_measure_impl.cc
     fsk_cfo_estimate_impl.cc
     fft_cfo_estimate_impl.cc
-    coerce_frequency_estimate_impl.cc
-)
+    cf_estimate_impl.cc )
 
 set(fhss_utils_sources "${fhss_utils_sources}" PARENT_SCOPE)
 if(NOT fhss_utils_sources)

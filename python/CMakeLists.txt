@@ -49,4 +49,4 @@ GR_ADD_TEST(qa_fft_burst_tagger ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}
 GR_ADD_TEST(qa_tagged_burst_to_pdu ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_tagged_burst_to_pdu.py)
 GR_ADD_TEST(qa_burst_downmix ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_burst_downmix.py)
 GR_ADD_TEST(qa_pdu_quadrature_demod_cf ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_pdu_quadrature_demod_cf.py)
-GR_ADD_TEST(qa_coerce_frequency_estimate ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_coerce_frequency_estimate.py)
+GR_ADD_TEST(qa_cf_estimate ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_cf_estimate.py)

@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<block>
+  <name>Center Freq Estimation</name>
+  <key>fhss_utils_cf_estimate</key>
+  <category>[Sandia]/FHSS Utilities</category>
+  <import>import fhss_utils</import>
+  <make>fhss_utils.cf_estimate($method, $channel_freqs)</make>
+
+  <callback>set_freqs($channel_freqs)</callback>
+  <callback>set_method($method)</callback>
+  
+  <param>
+    <name>Method</name>
+    <key>method</key>
+    <value>fhss_utils.RMS</value>
+    <type>int</type>
+    <option>
+      <name>RMS</name>
+      <key>fhss_utils.RMS</key>
+    </option>
+    <option>
+      <name>Half-Power</name>
+      <key>fhss_utils.HALF_POWER</key>
+    </option>
+    <option>
+      <name>Coerce</name>
+      <key>fhss_utils.COERCE</key>
+    </option>
+  </param>
+
+  <param>
+    <name>Channel Center Frequencies</name>
+    <key>channel_freqs</key>
+    <value>[]</value>
+    <type>real_vector</type>
+    <hide>part</hide>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>message</type>
+    <optional>true</optional>
+  </sink>
+
+  <source>
+    <name>out</name>
+    <type>message</type>
+    <optional>true</optional>
+  </source>
+
+  <source>
+    <name>debug</name>
+    <type>message</type>
+    <optional>true</optional>
+  </source>
+
+  <doc>
+  Estimates center frequency of a burst and re-centers it.
+
+  Parameters: 'method' selects method of center frequency estimation. Coerce
+  quantizes to the nearest frequency in the channel_freqs, rms is a Root-Mean-Squared method,
+  and half_power is a half-power point in the cumulative sum of the PSD.
+
+  Required metadata: 'sample_rate' and 'center_frequency'
+
+  Optional metadata: 'relative_frequency'
+
+  Produced metdata: 'bandwidth', 'snr_db', corrections to 'center_frequency' and 'relative_frequency'
+  </doc>
+</block>
