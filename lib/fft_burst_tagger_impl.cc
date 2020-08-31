@@ -261,6 +261,8 @@ bool fft_burst_tagger_impl::stop()
     printf("other timer: %f\n", d_other.elapsed());
 #endif
     printf("extra = %zu\n", extra);
+
+    return true;
 }
 
 /*

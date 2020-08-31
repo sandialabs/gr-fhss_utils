@@ -173,6 +173,8 @@ bool tagged_burst_to_pdu_impl::stop()
     while (d_work_queue.pop(b)) {
         delete b;
     }
+
+    return true;
 }
 
 
