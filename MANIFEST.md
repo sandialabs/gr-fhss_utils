@@ -1,16 +1,19 @@
 title: The FHSS_UTILS OOT Module
-brief: Short description of gr-fhss_utils
-tags: # Tags are arbitrary, but look at CGRAN what other authors are using
-  - sdr
+brief: Tools for detecting bursty signals.
+tags:
+  - FHSS
+  - Burst
+  - PDU
 author:
-  - Author Name <authors@email.address>
+  - Sandia National Laboratories
+  - Jacob Gilbert
+  - Peter Knee
+  - Sam Whiting
 copyright_owner:
-  - Copyright Owner 1
+  - NTESS, LLC
 license:
-#repo: # Put the URL of the repository here, or leave blank for default
-#website: <module_website> # If you have a separate project website, put it here
-#icon: <icon_url> # Put a URL to a square image here that will be used as an icon on CGRAN
+gr_supported_version: v3.7, v3.8
+#repo: https://github.com/sandialabs/gr-fhss_utils
+#icon: https://github.com/sandialabs/gr-fhss_utils/docs/fhss.jpg
 ---
-A longer, multi-line description of gr-fhss_utils.
-You may use some *basic* Markdown here.
-If left empty, it will try to find a README file instead.
+This GNU Radio module contains tools for detection of bursts in a frequency band of unknown or unpredictable time/frequency composition, originally intended for use with FHSS systems for which hopping behavior is not well understood.
