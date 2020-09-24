@@ -3,7 +3,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: gr-pdu_utils
+Name: gr-fhss_utils
 Description: GNURadio OOT toolset for Frequency Hopping signals
 Requires: gnuradio-runtime
 Version: @LIBVER@
