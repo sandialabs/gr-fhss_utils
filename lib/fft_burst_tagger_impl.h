@@ -12,6 +12,7 @@
 
 #include <gnuradio/fft/fft.h>
 #include <fhss_utils/fft_burst_tagger.h>
+#include <fhss_utils/constants.h>
 #include <mutex>
 //#define __USE_MKL__
 #ifdef __USE_MKL__
@@ -237,6 +238,9 @@ private:
     uint64_t d_rel_mag_hist;
     uint64_t d_rel_hist_index;
 
+    float d_bin_width_db;
+    float d_fft_gain_db;
+
     float* d_window_f;
     float* d_magnitude_shifted_f;
     float* d_fine_window_f;
@@ -305,17 +309,6 @@ private:
     timer d_rel_mag_timer;
     timer d_other;
 
-    // PMT definitions
-    const pmt::pmt_t PMT_RX_RATE = pmt::mp("rx_rate");
-    const pmt::pmt_t PMT_RX_FREQ = pmt::mp("rx_freq");
-    const pmt::pmt_t PMT_BURST_ID = pmt::mp("burst_id");
-    const pmt::pmt_t PMT_REL_FREQ = pmt::mp("relative_frequency");
-    const pmt::pmt_t PMT_CENTER_FREQ = pmt::mp("center_frequency");
-    const pmt::pmt_t PMT_MAG = pmt::mp("magnitude");
-    const pmt::pmt_t PMT_SAMPLE_RATE = pmt::mp("sample_rate");
-    const pmt::pmt_t PMT_NOISE_POWER = pmt::mp("noise_power");
-    const pmt::pmt_t PMT_BANDWIDTH = pmt::mp("bandwidth");
-
 public:
     /**
      * Constructor
@@ -370,21 +363,6 @@ public:
     int work(int noutput_items,
              gr_vector_const_void_star& input_items,
              gr_vector_void_star& output_items);
-
-    const pmt::pmt_t NEW_BURST_TAG = pmt::mp("new_burst");
-    const pmt::pmt_t GONE_BURST_TAG = pmt::mp("gone_burst");
-    const pmt::pmt_t RX_TIME_TAG = pmt::mp("rx_time");
-    const pmt::pmt_t META_RELATIVE_FREQ = pmt::mp("relative_frequency");
-    const pmt::pmt_t META_ID = pmt::mp("burst_id");
-    const pmt::pmt_t META_MAGNITUDE = pmt::mp("magnitude");
-    const pmt::pmt_t META_CENTER_FREQ = pmt::mp("center_frequency");
-    const pmt::pmt_t META_SAMP_RATE = pmt::mp("sample_rate");
-    const pmt::pmt_t META_START_TIME = pmt::mp("start_time");
-    const pmt::pmt_t META_DURATION = pmt::mp("duration");
-    const pmt::pmt_t META_NOISE_POWER = pmt::mp("noise_power");
-    const pmt::pmt_t META_BANDWIDTH = pmt::mp("bandwidth");
-
-    const pmt::pmt_t PDU_OUT_PORT = pmt::mp("cpdus");
 
     /**
      * Sets max burst bandwidth

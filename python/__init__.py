@@ -27,3 +27,9 @@ from .coarse_dehopper import coarse_dehopper
 from .fine_dehopper import fine_dehopper
 from .fsk_burst_extractor_hier import fsk_burst_extractor_hier
 #
+
+try:
+    import PIL
+    from .burst_tag_debug import burst_tag_debug
+except ImportError as e:
+    print("Python PIL library not found, will not install burst_tag_debug", e)

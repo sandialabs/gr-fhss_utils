@@ -107,7 +107,7 @@ parameters:
     dtype: int
     default: fhss_utils.RMS
     options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.COERCE]
-    option_labels: [RMS, Half-Power, Coerce]
+    option_labels: [RMS, Half-Power, Coerce Only]
     hide: part
 -   id: channel_freqs
     label: Channel Center Freqs
@@ -125,6 +125,7 @@ inputs:
 outputs:
 -   domain: message
     id: pdu_out
+
 asserts:
 - ${ decimation % 2 == 0 }
 

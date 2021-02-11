@@ -1,0 +1,67 @@
+id: fhss_utils_burst_tag_debug
+label: Burst Tagger Debug
+category: '[Sandia]/FHSS Utilities'
+
+templates:
+  imports: import fhss_utils
+  make: fhss_utils.burst_tag_debug(${filename}, ${nrows}, ${fft_size}, ${nrows_avg}, ${sample_rate}, ${quality}, ${always_on})
+
+parameters:
+- id: filename
+  label: Filename
+  dtype: string
+  default: "/tmp/btd"
+
+- id: nrows
+  label: NRows per Image
+  dtype: int
+  default: "5000"
+
+- id: fft_size
+  label: FFT Size
+  dtype: int
+  default: "1024"
+
+- id: nrows_avg
+  label: NFFTs Avg'ed
+  dtype: int
+  default: "1"
+
+- id: sample_rate
+  label: Sample Rate
+  dtype: float
+  default: "samp_rate"
+
+- id: quality
+  label: JPEG Quality
+  dtype: int
+  default: "75"
+
+- id: always_on
+  label: Always On
+  dtype: int
+  default: "False"
+
+inputs:
+-   domain: message
+    id: "fft_in"
+    optional: true
+
+-   domain: message
+    id: "burst_in_r"
+    optional: true
+
+-   domain: message
+    id: "burst_in_g"
+    optional: true
+
+-   domain: message
+    id: "burst_in_b"
+    optional: true
+
+outputs:
+-   domain: message
+    id: "pdu_out"
+    optional: true
+
+file_format: 1

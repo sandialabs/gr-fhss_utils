@@ -127,10 +127,18 @@ fft_burst_tagger_impl::fft_burst_tagger_impl(float center_frequency,
     // https://github.com/gnuradio/gnuradio/issues/1483
     set_min_noutput_items((d_lookahead + 1) * d_fft_size);
 
+    // setup the FFT window
     d_window_f = (float*)volk_malloc(sizeof(float) * d_fft_size, volk_get_alignment());
     std::vector<float> window =
         fft::window::build(fft::window::WIN_BLACKMAN, d_fft_size, 0);
     memcpy(d_window_f, &window[0], sizeof(float) * d_fft_size);
+    float gain_rms = 0;
+    for (auto& n : window)
+        gain_rms += n * n;
+    gain_rms = sqrt(gain_rms / d_fft_size);
+
+    d_fft_gain_db = 20 * log10(d_fft_size * gain_rms);
+    d_bin_width_db = 10 * log10(d_sample_rate / d_fft_size);
 
     d_fine_window_f =
         (float*)volk_malloc(sizeof(float) * d_fine_fft_size, volk_get_alignment());
@@ -565,7 +573,8 @@ void fft_burst_tagger_impl::create_new_bursts(const gr_complex* input)
             // positive number.
             size_t search_start =
                 (size_t)std::max((int)factor * (b->center_bin - d_burst_width / 2), 1);
-            size_t search_stop = std::min(factor * (b->center_bin + d_burst_width / 2),
+            // Ensure that search_stop is not 0 by performing ceil() division on (d_burst_width / 2) note: int(true) == 1 in C++
+            size_t search_stop = std::min(factor * (b->center_bin + (d_burst_width / 2)+int(d_burst_width % 2 != 0)),
                                           (size_t)(d_fine_fft_size - 2));
 
             // Normalize the magnitude by the noise floor
@@ -826,30 +835,41 @@ void fft_burst_tagger_impl::tag_new_bursts(void)
     for (burst b : d_new_bursts) {
         // printf("new burst %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", nitems_read(0),
         // b.start, nitems_read(0) - b.start);
-        pmt::pmt_t key = pmt::string_to_symbol("new_burst");
+        pmt::pmt_t key = PMTCONSTSTR__new_burst();
         // float relative_frequency = b.center_freq / d_sample_rate;
         // float relative_frequency = (b.center_bin - d_fft_size / 2) / float(d_fft_size);
         float relative_frequency = (b.center_freq) / d_sample_rate;
 
-        // get a noise floor estimate
+        /* NOISE FLOOR ESTIMATION /
+         *
+         * There are a number of scaling factors; the d_baseline_sum vector contains a sum
+         * of d_history_size FFT values, but these have not been corrected for the FFT
+         * size or window gain so we do that here. Additionally, we are now reporting the
+         * noise as a density in dBFS/Hz so this needs to be normalized by the bandwidth
+         * per bin. This is done using precomputed dB values for the bin width in dB and
+         * the fft gain in dB.
+         */
         // int start_bin = std::max(b.center_bin - d_burst_width / 2, 0);
         // int stop_bin = std::min(b.center_bin + d_burst_width / 2, d_fft_size-1);
-        float noise_power = 0;
+        double noise_density = 0;
         for (int i = b.start_bin; i <= b.stop_bin; i++) {
-            noise_power += d_baseline_sum_f[i];
+            noise_density += d_baseline_sum_f[i];
         }
-        noise_power /= b.stop_bin - b.start_bin + 1;
-        noise_power = 10 * log10(noise_power / (d_history_size * d_fft_size));
+        // normalize by total number of bins that form the sum
+        noise_density /= (b.stop_bin - b.start_bin + 1) * d_history_size;
+        noise_density = 10 * log10(noise_density) - d_fft_gain_db - d_bin_width_db;
+        // noise density estimation complete
 
         pmt::pmt_t value = pmt::make_dict();
-        value = pmt::dict_add(value, PMT_BURST_ID, pmt::from_uint64(b.id));
-        value = pmt::dict_add(value, PMT_REL_FREQ, pmt::from_float(relative_frequency));
+        value = pmt::dict_add(value, PMTCONSTSTR__burst_id(), pmt::from_uint64(b.id));
+        value = pmt::dict_add(value, PMTCONSTSTR__relative_frequency(), pmt::from_float(relative_frequency));
         value =
-            pmt::dict_add(value, PMT_CENTER_FREQ, pmt::from_float(d_center_frequency));
-        value = pmt::dict_add(value, PMT_MAG, pmt::from_float(b.magnitude));
-        value = pmt::dict_add(value, PMT_SAMPLE_RATE, pmt::from_float(d_sample_rate));
-        value = pmt::dict_add(value, PMT_NOISE_POWER, pmt::from_float(noise_power));
-        value = pmt::dict_add(value, PMT_BANDWIDTH, pmt::from_float(b.bandwidth));
+            pmt::dict_add(value, PMTCONSTSTR__center_frequency(), pmt::from_float(d_center_frequency));
+        value = pmt::dict_add(value, PMTCONSTSTR__magnitude(), pmt::from_float(b.magnitude));
+        value = pmt::dict_add(value, PMTCONSTSTR__sample_rate(), pmt::from_float(d_sample_rate));
+        value = pmt::dict_add(
+            value, PMTCONSTSTR__noise_density(), pmt::from_float(noise_density));
+        value = pmt::dict_add(value, PMTCONSTSTR__bandwidth(), pmt::from_float(b.bandwidth));
 
         // printf("Tagging new burst %" PRIu64 " on sample %" PRIu64 " (nitems_read(0)=%"
         // PRIu64 ")\n", b.id, b.start + d_burst_pre_len, nitems_read(0));
@@ -868,9 +888,9 @@ void fft_burst_tagger_impl::tag_gone_bursts(int noutput_items)
 
         if (nitems_read(0) <= output_index &&
             output_index < nitems_read(0) + noutput_items) {
-            pmt::pmt_t key = pmt::string_to_symbol("gone_burst");
+            pmt::pmt_t key = PMTCONSTSTR__gone_burst();
             pmt::pmt_t value = pmt::make_dict();
-            value = pmt::dict_add(value, pmt::mp("burst_id"), pmt::from_uint64(b->id));
+            value = pmt::dict_add(value, PMTCONSTSTR__burst_id(), pmt::from_uint64(b->id));
             // printf("Tagging gone burst %" PRIu64 " on sample %" PRIu64 "
             // (nitems_read(0)=%" PRIu64 ", noutput_items=%u)\n", b->id, output_index,
             // nitems_read(0), noutput_items);
@@ -900,7 +920,7 @@ int fft_burst_tagger_impl::work(int noutput_items,
 
     // check for center frequency updates
     std::vector<tag_t> freq_tags;
-    get_tags_in_window(freq_tags, 0, 0, noutput_items, PMT_RX_FREQ);
+    get_tags_in_window(freq_tags, 0, 0, noutput_items, PMTCONSTSTR__rx_freq());
     if (freq_tags.size() > 0) {
         d_center_frequency = pmt::to_double(freq_tags[freq_tags.size() - 1].value);
     }

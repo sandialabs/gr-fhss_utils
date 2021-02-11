@@ -10,6 +10,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <gnuradio/fft/fft.h>
+#include <gnuradio/fft/window.h>
 
 #include "cf_estimate_impl.h"
 #include <gnuradio/io_signature.h>
@@ -31,14 +33,19 @@ cf_estimate_impl::cf_estimate_impl(int method, std::vector<float> channel_freqs)
                 gr::io_signature::make(0, 0, 0)),
       d_method(method),
       d_channel_freqs(channel_freqs),
-      d_gauss_sigma(7.0f / 8.0f),
       d_mags2(nullptr)
 {
-    message_port_register_in(PMT_IN);
-    message_port_register_out(PMT_OUT);
-    message_port_register_out(PMT_DEBUG);
-    set_msg_handler(PMT_IN, boost::bind(&cf_estimate_impl::pdu_handler, this, _1));
+    message_port_register_in(PMTCONSTSTR__in());
+    message_port_register_out(PMTCONSTSTR__out());
+    message_port_register_out(PMTCONSTSTR__debug());
+    set_msg_handler(PMTCONSTSTR__in(), [this](pmt::pmt_t msg) { this->cf_estimate_impl::pdu_handler(msg); });
     fft_setup(15);
+
+    if (d_channel_freqs.size() == 0 && d_method == COERCE) {
+        GR_LOG_WARN(d_logger,
+                    "CF Estimator operating in COERCE mode with empty channel frequency "
+                    "list; no CF correction will be applied!");
+    }
 }
 
 /*
@@ -55,22 +62,49 @@ void cf_estimate_impl::fft_setup(int power)
     // initialize every power of fft up to "power" if they don't already exist
     for (int i = d_ffts.size(); i <= power; i++) {
 
-        // init fft
+        /* initialize fft */
         int fftsize = pow(2, i);
         d_ffts.push_back(new gr::fft::fft_complex(fftsize, true, 1));
 
-        // init window
+        /*
+         * initialize windows and calculate window gain, which in this case specifically
+         * refers to the non-coherent gain which is the rms value of the window weights:
+         *
+         *   G_{nc} = \sqrt{\frac{\Sigma w[n]^2}{N}}
+         *
+         * FIXME GR3.9: use the new GAUSSIAN/TUKEY built in fft::window kernels to
+         * generate the window
+         */
+
+        bool USE_GAUSSIAN_WINDOW(false);
         d_windows.push_back(
             (float*)volk_malloc(sizeof(float) * fftsize, volk_get_alignment()));
-        float two_sigma_squared = fftsize * d_gauss_sigma;
-        two_sigma_squared *= 2 * two_sigma_squared;
-        for (int j = 0; j < fftsize; j++) {
-            float x = (-fftsize + 1) / 2.0f + j;
-            d_windows[i][j] = std::exp((-x * x) / two_sigma_squared);
-            // d_windows[i][j] = 1;
+        float gain_rms = 0;
+
+        // this gaussian window is basically rectangular and the sigma selection is not
+        // documented (its very large); that said the BLACKMAN_WIN does not perform well
+        // for heavily biased signals. consider using a TUKEY filter...
+        if (USE_GAUSSIAN_WINDOW) {
+            float two_sigma_squared = fftsize * 7.0 / 8.0; // former d_guass_sigma = 7/8
+            two_sigma_squared *= 2 * two_sigma_squared;
+            for (int j = 0; j < fftsize; j++) {
+                float x = (-fftsize + 1) / 2.0f + j;
+                d_windows[i][j] = std::exp((-x * x) / two_sigma_squared);
+                gain_rms += (d_windows[i][j] * d_windows[i][j]);
+            }
+        } else {
+            std::vector<float> window =
+                fft::window::build(fft::window::WIN_BLACKMAN, fftsize, 0);
+            for (auto j = 0; j < fftsize; j++) {
+                d_windows[i][j] = window[j];
+                gain_rms += (d_windows[i][j] * d_windows[i][j]);
+            }
         }
 
-        // init d_mags2
+        gain_rms = sqrt(gain_rms / fftsize);
+        d_fft_mag2_gains.push_back(fftsize * fftsize * gain_rms * gain_rms);
+
+        /* initialize d_mags2 */
         if (d_mags2 != nullptr) {
             volk_free(d_mags2);
         }
@@ -127,45 +161,50 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
     // extract all needed data and metadata (sample_rate, center_frequency), optional
     // (relative_frequency)
     //////////////////////////////////
-    if (!pmt::dict_has_key(metadata, PMT_CENTER_FREQUENCY) ||
-        !pmt::dict_has_key(metadata, PMT_SAMPLE_RATE)) {
+    if (!pmt::dict_has_key(metadata, PMTCONSTSTR__center_frequency()) ||
+        !pmt::dict_has_key(metadata, PMTCONSTSTR__sample_rate())) {
         GR_LOG_WARN(d_logger,
                     "cf_estimate needs 'center_frequency' and 'sample_rate' metadata\n");
         return;
     }
     double center_frequency =
-        pmt::to_double(pmt::dict_ref(metadata, PMT_CENTER_FREQUENCY, pmt::PMT_NIL));
+        pmt::to_double(pmt::dict_ref(metadata, PMTCONSTSTR__center_frequency(), pmt::PMT_NIL));
     double relative_frequency = pmt::to_double(
-        pmt::dict_ref(metadata, PMT_RELATIVE_FREQUENCY, pmt::from_double(0.0)));
+        pmt::dict_ref(metadata, PMTCONSTSTR__relative_frequency(), pmt::from_double(0.0)));
     double sample_rate =
-        pmt::to_double(pmt::dict_ref(metadata, PMT_SAMPLE_RATE, pmt::PMT_NIL));
+        pmt::to_double(pmt::dict_ref(metadata, PMTCONSTSTR__sample_rate(), pmt::PMT_NIL));
+    double noise_density_db = pmt::to_double(
+        pmt::dict_ref(metadata, PMTCONSTSTR__noise_density(), pmt::from_double(NAN)));
 
     // extract the data portion
     size_t burst_size;
     const gr_complex* data = pmt::c32vector_elements(pdu_data, burst_size);
 
-
     //////////////////////////////////
     // frequency analysis & PSD estimate
     //////////////////////////////////
-    // fftsize is the data burst_size rounded up to a power of 2
-    bool use_ceil = false;
+    // fftsize is the data burst_size rounded down to a power of 2
+    bool round_up = false;
     int fftpower = 0;
     size_t copy_size = 0;
-    if (use_ceil) {
+    if (round_up) {
         fftpower = std::ceil(log2(burst_size));
         copy_size = burst_size;
     } else {
         fftpower = std::floor(log2(burst_size));
         copy_size = pow(2, fftpower);
     }
-    int fftsize = pow(2, fftpower);
+    size_t fftsize = pow(2, fftpower);
+
+    // the offset ensures the center part of the burst is used
+    uint32_t offset = std::max((size_t)0, (burst_size - fftsize) / 2);
+
     fft_setup(fftpower);
 
     // copy in data to the right buffer, pad with zeros
     gr_complex* fft_in = d_ffts[fftpower]->get_inbuf();
     memset(fft_in, 0, sizeof(gr_complex) * fftsize);
-    memcpy(fft_in, data, sizeof(gr_complex) * copy_size);
+    memcpy(fft_in, data + offset, sizeof(gr_complex) * copy_size);
 
     // apply gaussian window in place
     volk_32fc_32f_multiply_32fc(fft_in, fft_in, d_windows[fftpower], copy_size);
@@ -174,8 +213,7 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
     d_ffts[fftpower]->execute();
 
     // get magnitudes squared from fft output
-    gr_complex* fft_out = d_ffts[fftpower]->get_outbuf();
-    volk_32fc_magnitude_squared_32f(d_mags2, fft_out, fftsize);
+    volk_32fc_magnitude_squared_32f(d_mags2, d_ffts[fftpower]->get_outbuf(), fftsize);
 
     // fft shift and copy into STL object
     std::vector<float> mags2(d_mags2, d_mags2 + fftsize);
@@ -191,26 +229,30 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
     }
 
     // debug port publishes PSD
-    message_port_pub(PMT_DEBUG,
+    message_port_pub(PMTCONSTSTR__debug(),
                      pmt::cons(metadata, pmt::init_f32vector(fftsize, &mags2[0])));
 
+    //////////////////////////////////
+    // bandwidth estimation
+    //////////////////////////////////
+    float bandwidth = rms_bw(mags2, freq_axis, center_frequency);
 
     //////////////////////////////////
     // center frequency estimation
     //////////////////////////////////
     double shift = 0.0;
     // these methods return 'shift', a frequency correction from [-0.5,0.5]
-    if (d_method == COERCE) {
-        shift = this->coerce_frequency(center_frequency, sample_rate);
-    } else if (d_method == RMS) {
+    if (d_method == RMS) {
         shift = this->rms(mags2, freq_axis, center_frequency, sample_rate);
     } else if (d_method == HALF_POWER) {
         shift = this->half_power(mags2);
     } else {
-        GR_LOG_WARN(d_logger, "No valid method selected!\n");
-        std::cout << " cf_estimate has no valid method selected! " << d_method
-                  << std::endl;
+        // in COERCE mode no estimation is performed
     }
+
+    // if a frequency coercion list has been provided, apply that
+    shift +=
+        this->coerce_frequency((center_frequency + (shift * sample_rate)), sample_rate);
 
     //////////////////////////////////
     // correct the burst using the new center frequency
@@ -226,25 +268,28 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
         relative_frequency += cf_correction_hz;
 
     //////////////////////////////////
-    // estimate Bandwidth and SNR
-    //////////////////////////////////
-    float bandwidth = rms_bw(mags2, freq_axis, center_frequency);
-    float snr_db =
-        snr_estimation(mags2, freq_axis, center_frequency, bandwidth, sample_rate);
-
-    //////////////////////////////////
-    // build the output pdu
+    // estimate SNR and build the output PDU
     //////////////////////////////////
     metadata =
-        pmt::dict_add(metadata, PMT_CENTER_FREQUENCY, pmt::from_double(center_frequency));
+        pmt::dict_add(metadata, PMTCONSTSTR__center_frequency(), pmt::from_double(center_frequency));
     if (relative_frequency != 0)
         metadata = pmt::dict_add(
-            metadata, PMT_RELATIVE_FREQUENCY, pmt::from_double(relative_frequency));
-    metadata = pmt::dict_add(metadata, PMT_BANDWIDTH, pmt::from_double(bandwidth));
-    metadata = pmt::dict_add(metadata, PMT_SNRDB, pmt::from_double(snr_db));
+            metadata, PMTCONSTSTR__relative_frequency(), pmt::from_double(relative_frequency));
+
+    metadata = pmt::dict_add(metadata, PMTCONSTSTR__bandwidth(), pmt::from_double(bandwidth));
+
+    if (noise_density_db != NAN) {
+        float pwr_db = estimate_pwr(
+            mags2, freq_axis, center_frequency, bandwidth, d_fft_mag2_gains[fftpower]);
+        float snr_db = pwr_db - (noise_density_db + 10 * log10(bandwidth));
+        metadata =
+            pmt::dict_add(metadata, PMTCONSTSTR__pwr_db(), pmt::from_double(pwr_db));
+        metadata =
+            pmt::dict_add(metadata, PMTCONSTSTR__snr_db(), pmt::from_double(snr_db));
+    }
 
     pmt::pmt_t out_data = pmt::init_c32vector(burst_size, d_corrected_burst);
-    message_port_pub(PMT_OUT, pmt::cons(metadata, out_data));
+    message_port_pub(PMTCONSTSTR__out(), pmt::cons(metadata, out_data));
 }
 
 
@@ -298,7 +343,6 @@ float cf_estimate_impl::coerce_frequency(float center_frequency, float sample_ra
 {
     // we can only coerce the frequencies if we have a list of good frequencies
     if (d_channel_freqs.size() == 0) {
-        GR_LOG_WARN(d_logger, "No channel freqs to coerce!\n");
         return 0.0;
     }
 
@@ -343,29 +387,29 @@ float cf_estimate_impl::rms_bw(std::vector<float> mags2,
     return std::sqrt(top_integral / energy);
 }
 
-float cf_estimate_impl::snr_estimation(std::vector<float> mags2,
-                                       std::vector<float> freq_axis,
-                                       float center_frequency,
-                                       float bandwidth,
-                                       float sample_rate)
+/*
+ * FIXME: using the frequency axis is an odd way to do this... in general the logic here
+ * could use some cleanup
+ */
+float cf_estimate_impl::estimate_pwr(std::vector<float> mags2,
+                                     std::vector<float> freq_axis,
+                                     float center_frequency,
+                                     float bandwidth,
+                                     float fft_mag2_gain)
 {
-    // average burst power - center_frequency to +- bandwidth/2
     double start_freq = center_frequency - bandwidth / 2.0;
     double stop_freq = center_frequency + bandwidth / 2.0;
     double signal_power = 0.0;
-    double noise_power = 0.0;
-    for (size_t i = 0; i < mags2.size(); i++) {
+    for (auto i = 0; i < mags2.size(); i++) {
         if ((freq_axis[i] > start_freq) && (freq_axis[i] < stop_freq)) {
             signal_power += mags2[i];
-        } else {
-            noise_power += mags2[i];
         }
     }
+    // compensate for the window and fft gain
+    signal_power /= fft_mag2_gain;
 
-    // normalize, ratio, and convert to dB
-    signal_power /= bandwidth;
-    noise_power /= (sample_rate - bandwidth);
-    return 10 * std::log10(signal_power / noise_power);
+    // return the total signal power
+    return (10 * log10(signal_power));
 }
 
 //////////////////////////////////////////////

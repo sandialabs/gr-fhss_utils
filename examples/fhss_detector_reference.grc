@@ -37,7 +37,7 @@ blocks:
   parameters:
     comment: ''
     gui_hint: 2,0,1,1
-    label: Center Frequency
+    label: Center Freq
     min_len: '200'
     orient: Qt.Horizontal
     rangeType: float
@@ -63,7 +63,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [424, 980.0]
+    coordinate: [424, 964.0]
     rotation: 0
     state: enabled
 - name: fir_taps
@@ -90,20 +90,20 @@ blocks:
     start: '0'
     step: '1'
     stop: '70'
-    value: '40'
+    value: '0'
     widget: counter_slider
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [216, 20]
+    coordinate: [344, 148.0]
     rotation: 0
     state: enabled
 - name: raster_size
   id: variable
   parameters:
     comment: ''
-    value: '[64,128]'
+    value: '[64,256]'
   states:
     bus_sink: false
     bus_source: false
@@ -122,7 +122,28 @@ blocks:
     bus_structure: null
     coordinate: [328, 1676.0]
     rotation: 0
-    state: true
+    state: enabled
+- name: tf
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: 3,2,1,1
+    label: Throttle Factor
+    min_len: '200'
+    orient: Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '1'
+    stop: '40'
+    value: '20'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [216, 20.0]
+    rotation: 0
+    state: enabled
 - name: threshold
   id: variable_qtgui_range
   parameters:
@@ -132,18 +153,56 @@ blocks:
     min_len: '200'
     orient: Qt.Horizontal
     rangeType: float
-    start: '6'
+    start: '3'
     step: '1'
-    stop: '25'
-    value: '10'
+    stop: '40'
+    value: '6'
     widget: counter_slider
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [336, 20]
+    coordinate: [344, 20.0]
     rotation: 0
     state: enabled
+- name: analog_fastnoise_source_x_0
+  id: analog_fastnoise_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1000'
+    comment: Add noise impariment
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    noise_type: analog.GR_GAUSSIAN
+    samples: '8192'
+    seed: '0'
+    type: complex
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [232, 516.0]
+    rotation: 0
+    state: true
+- name: blocks_add_xx_0
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 504.0]
+    rotation: 0
+    state: true
 - name: blocks_file_source_0_0
   id: blocks_file_source
   parameters:
@@ -151,7 +210,7 @@ blocks:
     alias: ''
     begin_tag: pmt.PMT_NIL
     comment: ''
-    file: /tmp/samples.sc16
+    file: /tmp/a.sc16
     length: '0'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -163,7 +222,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [80, 396.0]
+    coordinate: [64, 396.0]
     rotation: 0
     state: enabled
 - name: blocks_interleaved_short_to_complex_0_1
@@ -180,7 +239,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [296, 428.0]
+    coordinate: [240, 428.0]
     rotation: 0
     state: enabled
 - name: blocks_message_debug_0_1
@@ -195,7 +254,7 @@ blocks:
     bus_structure: null
     coordinate: [1312, 1128.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: blocks_message_debug_0_1_0
   id: blocks_message_debug
   parameters:
@@ -259,14 +318,14 @@ blocks:
     ignoretag: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samples_per_second: samp_rate/100
+    samples_per_second: samp_rate/10000 * pow(10,tf/10)
     type: complex
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [496, 428.0]
+    coordinate: [432, 428.0]
     rotation: 0
     state: true
 - name: burst_width
@@ -412,7 +471,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [200, 816.0]
+    coordinate: [200, 804.0]
     rotation: 0
     state: enabled
 - name: fhss_utils_tagged_burst_to_pdu_0
@@ -431,12 +490,12 @@ blocks:
     relative_span: '1.0'
     sample_rate: samp_rate
     taps: decim_taps
-    threads: '7'
+    threads: '3'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [424, 808.0]
+    coordinate: [424, 796.0]
     rotation: 0
     state: enabled
 - name: fsk_burst_extractor_hier_0
@@ -469,7 +528,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [656, 708.0]
+    coordinate: [992, 708.0]
     rotation: 0
     state: disabled
 - name: hist_time
@@ -631,22 +690,22 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1264, 700.0]
+    coordinate: [1312, 692.0]
     rotation: 0
     state: true
 - name: note_2
   id: note
   parameters:
     alias: ''
-    comment: "Enable the CSV writer to save the data in the bursts\nto file. To open\
-      \ the bits in URH, remove the comma\nseparations and ensure the file extetnsion\
-      \ is *.txt:\n\n        sed 's/,//g' burst_bits.csv > bits.txt"
+    comment: "Enable the CSV writer to save the data in the bursts to file. To open\
+      \ the bits in\nURH, remove the comma separations and ensure the file extetnsion\
+      \ is *.txt:\n            sed 's/,//g' burst_bits.csv > bits.txt"
     note: ''
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1104, 1532.0]
+    coordinate: [928, 1588.0]
     rotation: 0
     state: true
 - name: note_2_0
@@ -659,7 +718,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [904, 1628.0]
+    coordinate: [912, 1524.0]
     rotation: 0
     state: enabled
 - name: output_attenuation
@@ -727,7 +786,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [728, 1628.0]
+    coordinate: [728, 1524.0]
     rotation: 0
     state: true
 - name: pdu_utils_pdu_align_0
@@ -817,7 +876,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [896, 852.0]
+    coordinate: [912, 836.0]
     rotation: 0
     state: enabled
 - name: pdu_utils_pdu_head_tail_0
@@ -962,7 +1021,7 @@ blocks:
     bus_structure: null
     coordinate: [1032, 1708.0]
     rotation: 0
-    state: true
+    state: disabled
 - name: qtgui_time_sink_x_0_0_0_0_0
   id: qtgui_time_sink_x
   parameters:
@@ -1288,7 +1347,7 @@ blocks:
     label: Sample Rate
     short_id: r
     type: intx
-    value: int(30.72e6)
+    value: int(30e6)
   states:
     bus_sink: false
     bus_source: false
@@ -1305,13 +1364,13 @@ blocks:
     comment: ''
     data_type: '''uint8'''
     file: /tmp/burst_bits.csv
-    metadata_format: ''
+    metadata_format: '''start_offset(uint64), center_frequency(double), symbol_rate(uint64)'''
     precision: '0'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [896, 1532.0]
+    coordinate: [728, 1604.0]
     rotation: 0
     state: disabled
 - name: uhd_usrp_source_1
@@ -1682,7 +1741,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [640, 492.0]
+    coordinate: [656, 492.0]
     rotation: 0
     state: disabled
 - name: virtual_sink_0
@@ -1734,7 +1793,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [32, 740.0]
+    coordinate: [32, 756.0]
     rotation: 0
     state: enabled
 - name: virtual_source_0_0
@@ -1760,7 +1819,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [40, 1252.0]
+    coordinate: [56, 1180.0]
     rotation: 0
     state: enabled
 - name: virtual_source_0_2_0
@@ -1778,11 +1837,13 @@ blocks:
     state: enabled
 
 connections:
+- [analog_fastnoise_source_x_0, '0', blocks_add_xx_0, '1']
+- [blocks_add_xx_0, '0', blocks_multiply_const_vxx_0_1, '0']
 - [blocks_file_source_0_0, '0', blocks_interleaved_short_to_complex_0_1, '0']
 - [blocks_interleaved_short_to_complex_0_1, '0', blocks_throttle_0, '0']
 - [blocks_multiply_const_vxx_0_1, '0', virtual_sink_0, '0']
 - [blocks_probe_rate_0, rate, blocks_message_debug_0_1_0, print]
-- [blocks_throttle_0, '0', blocks_multiply_const_vxx_0_1, '0']
+- [blocks_throttle_0, '0', blocks_add_xx_0, '0']
 - [fhss_utils_cf_estimate_0, out, pdu_utils_pdu_fir_filter_1, pdu_in]
 - [fhss_utils_fft_burst_tagger_0, '0', fhss_utils_tagged_burst_to_pdu_0, '0']
 - [fhss_utils_tagged_burst_to_pdu_0, cpdus, fhss_utils_cf_estimate_0, in]

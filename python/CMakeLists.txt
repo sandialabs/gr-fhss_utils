@@ -23,7 +23,8 @@ GR_PYTHON_INSTALL(
     s_and_h_detector.py
     coarse_dehopper.py
     fine_dehopper.py
-    fsk_burst_extractor_hier.py DESTINATION ${GR_PYTHON_DIR}/fhss_utils
+    fsk_burst_extractor_hier.py
+    burst_tag_debug.py DESTINATION ${GR_PYTHON_DIR}/fhss_utils
 )
 
 ########################################################################
@@ -36,3 +37,4 @@ set(GR_TEST_PYTHON_DIRS ${CMAKE_BINARY_DIR}/swig)
 GR_ADD_TEST(qa_cf_estimate ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_cf_estimate.py)
 GR_ADD_TEST(qa_fft_burst_tagger ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_fft_burst_tagger.py)
 GR_ADD_TEST(qa_tagged_burst_to_pdu ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_tagged_burst_to_pdu.py)
+GR_ADD_TEST(qa_constants ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_constants.py)

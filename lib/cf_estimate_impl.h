@@ -13,6 +13,7 @@
 #include <gnuradio/blocks/rotator.h>
 #include <gnuradio/fft/fft.h>
 #include <fhss_utils/cf_estimate.h>
+#include <fhss_utils/constants.h>
 
 namespace gr {
 namespace fhss_utils {
@@ -31,9 +32,9 @@ private:
     void fft_cleanup();
     std::vector<gr::fft::fft_complex*> d_ffts;
     std::vector<float*> d_windows;
+    std::vector<float> d_fft_mag2_gains;
     float* d_mags2;
     float* d_magnitude_shifted_f;
-    const float d_gauss_sigma;
 
     // correction tools
     blocks::rotator d_rotate;
@@ -52,21 +53,11 @@ private:
     float rms_bw(std::vector<float> mags2,
                  std::vector<float> freq_axis,
                  float center_frequency);
-    float snr_estimation(std::vector<float> mags2,
-                         std::vector<float> freq_axis,
-                         float center_frequency,
-                         float bandwidth,
-                         float sample_rate);
-
-    // intern'ed pmts
-    pmt::pmt_t PMT_CENTER_FREQUENCY = pmt::intern("center_frequency");
-    pmt::pmt_t PMT_RELATIVE_FREQUENCY = pmt::intern("relative_frequency");
-    pmt::pmt_t PMT_SAMPLE_RATE = pmt::intern("sample_rate");
-    pmt::pmt_t PMT_BANDWIDTH = pmt::intern("bandwidth");
-    pmt::pmt_t PMT_SNRDB = pmt::intern("snr_db");
-    pmt::pmt_t PMT_IN = pmt::intern("in");
-    pmt::pmt_t PMT_OUT = pmt::intern("out");
-    pmt::pmt_t PMT_DEBUG = pmt::intern("debug");
+    float estimate_pwr(std::vector<float> mags2,
+                       std::vector<float> freq_axis,
+                       float center_frequency,
+                       float bandwidth,
+                       float fft_mag2_gain);
 
 public:
     /**

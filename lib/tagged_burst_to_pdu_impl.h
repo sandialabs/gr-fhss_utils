@@ -13,6 +13,7 @@
 #include <gnuradio/blocks/rotator.h>
 #include <gnuradio/filter/fir_filter.h>
 #include <fhss_utils/tagged_burst_to_pdu.h>
+#include <fhss_utils/constants.h>
 #include <boost/lockfree/queue.hpp>
 #include <queue>
 
@@ -143,28 +144,19 @@ private:
 
     double convert_rx_time(const tag_t& rx_time_tag);
 
-    const pmt::pmt_t NEW_BURST_TAG = pmt::mp("new_burst");
-    const pmt::pmt_t GONE_BURST_TAG = pmt::mp("gone_burst");
-    const pmt::pmt_t RX_TIME_TAG = pmt::mp("rx_time");
-    const pmt::pmt_t META_RELATIVE_FREQ = pmt::mp("relative_frequency");
-    const pmt::pmt_t META_ID = pmt::mp("burst_id");
-    const pmt::pmt_t META_MAGNITUDE = pmt::mp("magnitude");
-    const pmt::pmt_t META_CENTER_FREQ = pmt::mp("center_frequency");
-    const pmt::pmt_t META_SAMP_RATE = pmt::mp("sample_rate");
-    const pmt::pmt_t META_START_TIME = pmt::mp("start_time");
-    const pmt::pmt_t META_DURATION = pmt::mp("duration");
-    const pmt::pmt_t META_START_OFFSET = pmt::mp("start_offset");
-    const pmt::pmt_t META_END_OFFSET = pmt::mp("end_offset");
-
-    const pmt::pmt_t PDU_OUT_PORT = pmt::mp("cpdus");
-
     // The gnuradio filter function reads memory that it shouldn't.  We offset our array
     // by this amount to prevent bad things from happening.  If we fix the filter
     // function, then we can get rid of this.
     const size_t ROT_TMP_OFFSET = 4;
 
 public:
+    // d_block_size is used as the buffer size and should always be set to
+    // far more than half of the tap length, since that is the overlap region
     static const size_t d_block_size = 32 * 1024;
+    // d_num_buffers was empirically chosen to be 5. If we need more than 5,
+    // the block is probably backed up significantly and should back-pressure
+    // the gnuradio scheduler
+    static const size_t d_num_buffers = 5;
 
     /**
      * Constructor

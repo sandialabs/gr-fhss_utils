@@ -12,5 +12,6 @@ install(FILES
     api.h
     cf_estimate.h
     fft_burst_tagger.h
-    tagged_burst_to_pdu.h DESTINATION include/fhss_utils
+    tagged_burst_to_pdu.h
+    constants.h DESTINATION include/fhss_utils
 )

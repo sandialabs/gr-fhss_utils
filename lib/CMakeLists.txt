@@ -13,6 +13,7 @@ list(APPEND fhss_utils_sources
     cf_estimate_impl.cc
     fft_burst_tagger_impl.cc
     tagged_burst_to_pdu_impl.cc
+    constants.cc
 )
 
 set(fhss_utils_sources "${fhss_utils_sources}" PARENT_SCOPE)
