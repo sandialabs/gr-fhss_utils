@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  *
@@ -14,6 +14,7 @@
 #include <gnuradio/fft/fft.h>
 #include <gnuradio/fft/window.h>
 #include <gnuradio/io_signature.h>
+#include <fhss_utils/constants.h>
 
 #include "fft_burst_tagger_impl.h"
 
@@ -42,18 +43,18 @@ fft_burst_tagger::sptr fft_burst_tagger::make(float center_frequency,
                                               int lookahead,
                                               bool debug)
 {
-    return gnuradio::get_initial_sptr(new fft_burst_tagger_impl(center_frequency,
-                                                                fft_size,
-                                                                sample_rate,
-                                                                burst_pre_len,
-                                                                burst_post_len,
-                                                                burst_width,
-                                                                max_bursts,
-                                                                max_burst_len,
-                                                                threshold,
-                                                                history_size,
-                                                                lookahead,
-                                                                debug));
+    return gnuradio::make_block_sptr<fft_burst_tagger_impl>(center_frequency,
+                                                            fft_size,
+                                                            sample_rate,
+                                                            burst_pre_len,
+                                                            burst_post_len,
+                                                            burst_width,
+                                                            max_bursts,
+                                                            max_burst_len,
+                                                            threshold,
+                                                            history_size,
+                                                            lookahead,
+                                                            debug);
 }
 
 /*
@@ -97,8 +98,8 @@ fft_burst_tagger_impl::fft_burst_tagger_impl(float center_frequency,
     const int nthreads = 1;
     d_fine_fft_size =
         d_fft_size * std::min(16, (int)pow(2, int(log(d_lookahead) / log(2))));
-    d_fft = new fft::fft_complex(d_fft_size, true, nthreads);
-    d_fine_fft = new fft::fft_complex(d_fine_fft_size, true, nthreads);
+    d_fft = new fft::fft_complex_fwd(d_fft_size, nthreads);
+    d_fine_fft = new fft::fft_complex_fwd(d_fine_fft_size, nthreads);
 
 #ifdef __USE_MKL__
     MKL_LONG status =
@@ -573,8 +574,10 @@ void fft_burst_tagger_impl::create_new_bursts(const gr_complex* input)
             // positive number.
             size_t search_start =
                 (size_t)std::max((int)factor * (b->center_bin - d_burst_width / 2), 1);
-            // Ensure that search_stop is not 0 by performing ceil() division on (d_burst_width / 2) note: int(true) == 1 in C++
-            size_t search_stop = std::min(factor * (b->center_bin + (d_burst_width / 2)+int(d_burst_width % 2 != 0)),
+            // Ensure that search_stop is not 0 by performing ceil() division on
+            // (d_burst_width / 2) note: int(true) == 1 in C++
+            size_t search_stop = std::min(factor * (b->center_bin + (d_burst_width / 2) +
+                                                    int(d_burst_width % 2 != 0)),
                                           (size_t)(d_fine_fft_size - 2));
 
             // Normalize the magnitude by the noise floor
@@ -862,14 +865,19 @@ void fft_burst_tagger_impl::tag_new_bursts(void)
 
         pmt::pmt_t value = pmt::make_dict();
         value = pmt::dict_add(value, PMTCONSTSTR__burst_id(), pmt::from_uint64(b.id));
-        value = pmt::dict_add(value, PMTCONSTSTR__relative_frequency(), pmt::from_float(relative_frequency));
+        value = pmt::dict_add(value,
+                              PMTCONSTSTR__relative_frequency(),
+                              pmt::from_float(relative_frequency));
+        value = pmt::dict_add(
+            value, PMTCONSTSTR__center_frequency(), pmt::from_float(d_center_frequency));
         value =
-            pmt::dict_add(value, PMTCONSTSTR__center_frequency(), pmt::from_float(d_center_frequency));
-        value = pmt::dict_add(value, PMTCONSTSTR__magnitude(), pmt::from_float(b.magnitude));
-        value = pmt::dict_add(value, PMTCONSTSTR__sample_rate(), pmt::from_float(d_sample_rate));
+            pmt::dict_add(value, PMTCONSTSTR__magnitude(), pmt::from_float(b.magnitude));
+        value = pmt::dict_add(
+            value, PMTCONSTSTR__sample_rate(), pmt::from_float(d_sample_rate));
         value = pmt::dict_add(
             value, PMTCONSTSTR__noise_density(), pmt::from_float(noise_density));
-        value = pmt::dict_add(value, PMTCONSTSTR__bandwidth(), pmt::from_float(b.bandwidth));
+        value =
+            pmt::dict_add(value, PMTCONSTSTR__bandwidth(), pmt::from_float(b.bandwidth));
 
         // printf("Tagging new burst %" PRIu64 " on sample %" PRIu64 " (nitems_read(0)=%"
         // PRIu64 ")\n", b.id, b.start + d_burst_pre_len, nitems_read(0));
@@ -890,7 +898,8 @@ void fft_burst_tagger_impl::tag_gone_bursts(int noutput_items)
             output_index < nitems_read(0) + noutput_items) {
             pmt::pmt_t key = PMTCONSTSTR__gone_burst();
             pmt::pmt_t value = pmt::make_dict();
-            value = pmt::dict_add(value, PMTCONSTSTR__burst_id(), pmt::from_uint64(b->id));
+            value =
+                pmt::dict_add(value, PMTCONSTSTR__burst_id(), pmt::from_uint64(b->id));
             // printf("Tagging gone burst %" PRIu64 " on sample %" PRIu64 "
             // (nitems_read(0)=%" PRIu64 ", noutput_items=%u)\n", b->id, output_index,
             // nitems_read(0), noutput_items);

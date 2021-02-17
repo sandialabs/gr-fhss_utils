@@ -12,9 +12,7 @@ from gnuradio import gr
 from gnuradio import blocks
 from gnuradio.filter import firdes
 import fhss_utils
-from .fhss_utils_swig import RMS
-from .fhss_utils_swig import HALF_POWER
-from .fhss_utils_swig import COERCE
+from fhss_utils import RMS, HALF_POWER, COERCE
 import pdu_utils
 
 class fsk_burst_extractor_hier(gr.hier_block2):

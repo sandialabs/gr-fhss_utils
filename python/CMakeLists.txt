@@ -4,6 +4,7 @@
 # This file is a part of gr-fhss_utils
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
+#
 
 ########################################################################
 # Include python install macros
@@ -12,6 +13,8 @@ include(GrPython)
 if(NOT PYTHONINTERP_FOUND)
     return()
 endif()
+
+add_subdirectory(bindings)
 
 ########################################################################
 # Install python sources
@@ -33,7 +36,9 @@ GR_PYTHON_INSTALL(
 include(GrTest)
 
 set(GR_TEST_TARGET_DEPS gnuradio-fhss_utils)
-set(GR_TEST_PYTHON_DIRS ${CMAKE_BINARY_DIR}/swig)
+set(GR_TEST_LIBRARY_DIRS /usr/local/lib64)
+set(GR_TEST_PYTHON_DIRS ${CMAKE_BINARY_DIR}/python)
+
 GR_ADD_TEST(qa_cf_estimate ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_cf_estimate.py)
 GR_ADD_TEST(qa_fft_burst_tagger ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_fft_burst_tagger.py)
 GR_ADD_TEST(qa_tagged_burst_to_pdu ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_tagged_burst_to_pdu.py)

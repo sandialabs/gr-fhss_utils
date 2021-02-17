@@ -50,8 +50,8 @@ Thumbs.db
 build
 build/*
 
-# GRC python files #
-####################
+# grc generated py files #
+##########################
 examples/*.py
 examples/*/*.py
 examples/*/*/*.py

@@ -10,14 +10,13 @@
 This is the GNU Radio FHSS_UTILS module. Place your Python package
 description here (python/__init__.py).
 '''
-from __future__ import unicode_literals
+import os
 
-# import swig generated symbols into the fhss_utils namespace
+# import pybind11 generated symbols into the fhss_utils namespace
 try:
     # this might fail if the module is python-only
-    from .fhss_utils_swig import *
-except ImportError as e:
-    print("FAILED to import", e)
+    from .fhss_utils_python import *
+except ModuleNotFoundError:
     pass
 
 # import any pure python here

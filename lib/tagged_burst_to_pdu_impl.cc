@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  *
@@ -14,6 +14,7 @@
 #include "tagged_burst_to_pdu_impl.h"
 #include <gnuradio/io_signature.h>
 
+#include <fhss_utils/constants.h>
 #include <inttypes.h>
 #include <omp.h>
 #include <pthread.h>
@@ -35,16 +36,15 @@ tagged_burst_to_pdu::sptr tagged_burst_to_pdu::make(size_t decimation,
                                                     float sample_rate,
                                                     int num_threads)
 {
-    return gnuradio::get_initial_sptr(
-        new tagged_burst_to_pdu_impl(decimation,
-                                     taps,
-                                     min_burst_time,
-                                     max_burst_time,
-                                     relative_center_frequency,
-                                     relative_span,
-                                     relative_sample_rate,
-                                     sample_rate,
-                                     num_threads));
+    return gnuradio::make_block_sptr<tagged_burst_to_pdu_impl>(decimation,
+                                                               taps,
+                                                               min_burst_time,
+                                                               max_burst_time,
+                                                               relative_center_frequency,
+                                                               relative_span,
+                                                               relative_sample_rate,
+                                                               sample_rate,
+                                                               num_threads);
 }
 
 /*
@@ -74,8 +74,8 @@ tagged_burst_to_pdu_impl::tagged_burst_to_pdu_impl(size_t decimation,
       d_blocked(false),
       d_decimation(decimation),
       d_taps(taps),
-      d_write_queue(d_num_buffers+1), // +1 to match the work_queue size
-      d_work_queue(d_num_buffers+1), // +1 so stop() function can add a buffer
+      d_write_queue(d_num_buffers + 1), // +1 to match the work_queue size
+      d_work_queue(d_num_buffers + 1),  // +1 so stop() function can add a buffer
       d_sample_rate(sample_rate),
       d_num_threads(num_threads)
 {
@@ -93,7 +93,7 @@ tagged_burst_to_pdu_impl::tagged_burst_to_pdu_impl(size_t decimation,
     // create enough fir_filters so that each thread can have one
     // This is necessary because fir_filter_ccf is not re-entrant.
     for (size_t i = 0; i < d_num_threads; i++) {
-        filter::kernel::fir_filter_ccf* f = new filter::kernel::fir_filter_ccf(0, taps);
+        filter::kernel::fir_filter_ccf* f = new filter::kernel::fir_filter_ccf(taps);
         d_input_fir_filters.push_back(f);
     }
 
@@ -111,7 +111,7 @@ tagged_burst_to_pdu_impl::tagged_burst_to_pdu_impl(size_t decimation,
     // ensuring that we account for filter tails.  In downsampling, we skip over D input
     // points after every calculation.  The filter function always starts at the first
     // input point, so we need to throw away some filter tail points to ensure that.
-    //printf("filter len = %zu\n", d_taps.size());
+    // printf("filter len = %zu\n", d_taps.size());
 
     // since this is a sync block, setting this field also ensures we have the input
     // buffer as a multiple of this size. In order to use this block after the
@@ -228,17 +228,18 @@ void tagged_burst_to_pdu_impl::create_new_bursts(const buffer& work_buffer)
 
     for (size_t i = 0; i < work_buffer.new_burst_tags.size(); i++) {
         tag_t tag = work_buffer.new_burst_tags[i];
-        float relative_frequency =
-            pmt::to_float(pmt::dict_ref(tag.value, PMTCONSTSTR__relative_frequency(), pmt::PMT_NIL));
+        float relative_frequency = pmt::to_float(
+            pmt::dict_ref(tag.value, PMTCONSTSTR__relative_frequency(), pmt::PMT_NIL));
 
         if (d_lower_border < relative_frequency && relative_frequency <= d_upper_border) {
-            uint64_t id = pmt::to_uint64(pmt::dict_ref(tag.value, PMTCONSTSTR__burst_id(), pmt::PMT_NIL));
-            float magnitude =
-                pmt::to_float(pmt::dict_ref(tag.value, PMTCONSTSTR__magnitude(), pmt::PMT_NIL));
-            float center_frequency =
-                pmt::to_float(pmt::dict_ref(tag.value, PMTCONSTSTR__center_frequency(), pmt::PMT_NIL));
-            float sample_rate =
-                pmt::to_float(pmt::dict_ref(tag.value, PMTCONSTSTR__sample_rate(), pmt::PMT_NIL));
+            uint64_t id = pmt::to_uint64(
+                pmt::dict_ref(tag.value, PMTCONSTSTR__burst_id(), pmt::PMT_NIL));
+            float magnitude = pmt::to_float(
+                pmt::dict_ref(tag.value, PMTCONSTSTR__magnitude(), pmt::PMT_NIL));
+            float center_frequency = pmt::to_float(
+                pmt::dict_ref(tag.value, PMTCONSTSTR__center_frequency(), pmt::PMT_NIL));
+            float sample_rate = pmt::to_float(
+                pmt::dict_ref(tag.value, PMTCONSTSTR__sample_rate(), pmt::PMT_NIL));
 
             // if we've already seen a burst with this id, throw this one away before we
             // malloc any more memory
@@ -290,18 +291,19 @@ void tagged_burst_to_pdu_impl::create_new_bursts(const buffer& work_buffer)
             tag.value = pmt::dict_delete(tag.value, PMTCONSTSTR__center_frequency());
             tag.value = pmt::dict_delete(tag.value, PMTCONSTSTR__sample_rate());
             tag.value = pmt::dict_delete(tag.value, PMTCONSTSTR__relative_frequency());
+            tag.value = pmt::dict_add(tag.value,
+                                      PMTCONSTSTR__center_frequency(),
+                                      pmt::from_float(center_frequency));
             tag.value = pmt::dict_add(
-                tag.value, PMTCONSTSTR__center_frequency(), pmt::from_float(center_frequency));
-            tag.value =
-                pmt::dict_add(tag.value, PMTCONSTSTR__sample_rate(), pmt::from_float(sample_rate));
+                tag.value, PMTCONSTSTR__sample_rate(), pmt::from_float(sample_rate));
             tag.value = pmt::dict_add(
                 tag.value,
                 PMTCONSTSTR__relative_frequency(),
                 pmt::from_float(relative_frequency * sample_rate * d_decimation));
-            tag.value =
-                pmt::dict_add(tag.value, PMTCONSTSTR__start_time(), pmt::from_double(start_time));
-            tag.value =
-                pmt::dict_add(tag.value, PMTCONSTSTR__start_offset(), pmt::from_uint64(tag.offset));
+            tag.value = pmt::dict_add(
+                tag.value, PMTCONSTSTR__start_time(), pmt::from_double(start_time));
+            tag.value = pmt::dict_add(
+                tag.value, PMTCONSTSTR__start_offset(), pmt::from_uint64(tag.offset));
 
 
             burst_data burst = { id,
@@ -356,7 +358,8 @@ void tagged_burst_to_pdu_impl::create_new_bursts(const buffer& work_buffer)
 void tagged_burst_to_pdu_impl::publish_and_remove_old_bursts(const buffer& work_buffer)
 {
     for (tag_t tag : work_buffer.gone_burst_tags) {
-        uint64_t id = pmt::to_uint64(pmt::dict_ref(tag.value, PMTCONSTSTR__burst_id(), pmt::PMT_NIL));
+        uint64_t id = pmt::to_uint64(
+            pmt::dict_ref(tag.value, PMTCONSTSTR__burst_id(), pmt::PMT_NIL));
 
         if (d_bursts.count(id)) {
             burst_data& burst = d_bursts[id];
@@ -368,8 +371,8 @@ void tagged_burst_to_pdu_impl::publish_and_remove_old_bursts(const buffer& work_
                                       (float)d_decimation);
             burst.len -= burst.len > offset ? offset : burst.len;
             burst.len = std::min(burst.len, (size_t)d_max_burst_size);
-            burst.dict =
-                pmt::dict_add(burst.dict, PMTCONSTSTR__end_offset(), pmt::from_uint64(tag.offset));
+            burst.dict = pmt::dict_add(
+                burst.dict, PMTCONSTSTR__end_offset(), pmt::from_uint64(tag.offset));
             if (burst.len >= d_min_burst_size) {
                 if (id == 1) {
                     printf("id %lu: len = %zu %zu\n", id, burst.len, tag.offset);
@@ -411,8 +414,9 @@ void tagged_burst_to_pdu_impl::publish_burst(burst_data& burst)
     pmt::pmt_t d_pdu_meta = burst.dict;
     pmt::pmt_t d_pdu_vector = pmt::init_c32vector(burst.len, burst.data);
 
-    d_pdu_meta = pmt::dict_add(
-        d_pdu_meta, PMTCONSTSTR__duration(), pmt::from_float(burst.len / burst.sample_rate));
+    d_pdu_meta = pmt::dict_add(d_pdu_meta,
+                               PMTCONSTSTR__duration(),
+                               pmt::from_float(burst.len / burst.sample_rate));
 
     pmt::pmt_t msg = pmt::cons(d_pdu_meta, d_pdu_vector);
 

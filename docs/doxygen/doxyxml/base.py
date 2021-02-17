@@ -6,14 +6,13 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+#
 """
 A base class is created.
 
 Classes based upon this are used to make more user-friendly interfaces
 to the doxygen xml docs than the generated classes provide.
 """
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import os
 import pdb

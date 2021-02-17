@@ -13,7 +13,7 @@ author:
 copyright_owner:
   - NTESS, LLC
 license: GPLv3
-gr_supported_version: v3.7, v3.8
+gr_supported_version: v3.7, v3.8, 3.9
 dependencies: gr-pdu_utils
 repo: https://github.com/sandialabs/gr-fhss_utils
 icon: https://raw.githubusercontent.com/sandialabs/gr-fhss_utils/master/docs/fhss.jpg

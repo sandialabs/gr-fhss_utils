@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  *
@@ -39,7 +39,7 @@ namespace fhss_utils {
 class FHSS_UTILS_API cf_estimate : virtual public gr::block
 {
 public:
-    typedef boost::shared_ptr<cf_estimate> sptr;
+    typedef std::shared_ptr<cf_estimate> sptr;
 
     /*!
      * \brief Creates a new instance of fhss_utils::cf_estimate.

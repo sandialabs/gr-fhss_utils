@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # 
-# Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
 # retains certain rights in this software.
 # 
@@ -10,10 +10,17 @@
 
 from gnuradio import gr, gr_unittest
 from gnuradio import blocks
-import fhss_utils_swig as fhss_utils
 import time
 import pmt
 import math
+try:
+    import fhss_utils
+except ImportError:
+    import os
+    import sys
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    sys.path.append(os.path.join(dirname, "bindings"))
+    import fhss_utils
 
 class qa_tagged_burst_to_pdu (gr_unittest.TestCase):
 
@@ -345,4 +352,4 @@ class qa_tagged_burst_to_pdu (gr_unittest.TestCase):
         self.assertEqual(pmt.to_uint64(pmt.dict_ref(rcv_meta, pmt.intern("burst_id"), pmt.PMT_NIL)), 222)
 
 if __name__ == '__main__':
-    gr_unittest.run(qa_tagged_burst_to_pdu)
+    gr_unittest.run(qa_tagged_burst_to_pdu, "qa_tagged_burst_to_pdu.xml")

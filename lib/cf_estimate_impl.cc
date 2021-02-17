@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  *
@@ -15,13 +15,14 @@
 
 #include "cf_estimate_impl.h"
 #include <gnuradio/io_signature.h>
+#include <fhss_utils/constants.h>
 
 namespace gr {
 namespace fhss_utils {
 
 cf_estimate::sptr cf_estimate::make(int method, std::vector<float> channel_freqs)
 {
-    return gnuradio::get_initial_sptr(new cf_estimate_impl(method, channel_freqs));
+    return gnuradio::make_block_sptr<cf_estimate_impl>(method, channel_freqs);
 }
 
 /*
@@ -38,7 +39,8 @@ cf_estimate_impl::cf_estimate_impl(int method, std::vector<float> channel_freqs)
     message_port_register_in(PMTCONSTSTR__in());
     message_port_register_out(PMTCONSTSTR__out());
     message_port_register_out(PMTCONSTSTR__debug());
-    set_msg_handler(PMTCONSTSTR__in(), [this](pmt::pmt_t msg) { this->cf_estimate_impl::pdu_handler(msg); });
+    set_msg_handler(PMTCONSTSTR__in(),
+                    [this](pmt::pmt_t msg) { this->pdu_handler(msg); });
     fft_setup(15);
 
     if (d_channel_freqs.size() == 0 && d_method == COERCE) {
@@ -64,7 +66,7 @@ void cf_estimate_impl::fft_setup(int power)
 
         /* initialize fft */
         int fftsize = pow(2, i);
-        d_ffts.push_back(new gr::fft::fft_complex(fftsize, true, 1));
+        d_ffts.push_back(new gr::fft::fft_complex_fwd(fftsize, 1));
 
         /*
          * initialize windows and calculate window gain, which in this case specifically
@@ -115,7 +117,7 @@ void cf_estimate_impl::fft_setup(int power)
 
 void cf_estimate_impl::fft_cleanup()
 {
-    for (gr::fft::fft_complex* fft : d_ffts) {
+    for (gr::fft::fft_complex_fwd* fft : d_ffts) {
         delete fft;
     }
     d_ffts.clear();
@@ -167,10 +169,10 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
                     "cf_estimate needs 'center_frequency' and 'sample_rate' metadata\n");
         return;
     }
-    double center_frequency =
-        pmt::to_double(pmt::dict_ref(metadata, PMTCONSTSTR__center_frequency(), pmt::PMT_NIL));
-    double relative_frequency = pmt::to_double(
-        pmt::dict_ref(metadata, PMTCONSTSTR__relative_frequency(), pmt::from_double(0.0)));
+    double center_frequency = pmt::to_double(
+        pmt::dict_ref(metadata, PMTCONSTSTR__center_frequency(), pmt::PMT_NIL));
+    double relative_frequency = pmt::to_double(pmt::dict_ref(
+        metadata, PMTCONSTSTR__relative_frequency(), pmt::from_double(0.0)));
     double sample_rate =
         pmt::to_double(pmt::dict_ref(metadata, PMTCONSTSTR__sample_rate(), pmt::PMT_NIL));
     double noise_density_db = pmt::to_double(
@@ -270,13 +272,15 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
     //////////////////////////////////
     // estimate SNR and build the output PDU
     //////////////////////////////////
-    metadata =
-        pmt::dict_add(metadata, PMTCONSTSTR__center_frequency(), pmt::from_double(center_frequency));
+    metadata = pmt::dict_add(
+        metadata, PMTCONSTSTR__center_frequency(), pmt::from_double(center_frequency));
     if (relative_frequency != 0)
-        metadata = pmt::dict_add(
-            metadata, PMTCONSTSTR__relative_frequency(), pmt::from_double(relative_frequency));
+        metadata = pmt::dict_add(metadata,
+                                 PMTCONSTSTR__relative_frequency(),
+                                 pmt::from_double(relative_frequency));
 
-    metadata = pmt::dict_add(metadata, PMTCONSTSTR__bandwidth(), pmt::from_double(bandwidth));
+    metadata =
+        pmt::dict_add(metadata, PMTCONSTSTR__bandwidth(), pmt::from_double(bandwidth));
 
     if (noise_density_db != NAN) {
         float pwr_db = estimate_pwr(
@@ -411,16 +415,6 @@ float cf_estimate_impl::estimate_pwr(std::vector<float> mags2,
     // return the total signal power
     return (10 * log10(signal_power));
 }
-
-//////////////////////////////////////////////
-// getters/setters
-//////////////////////////////////////////////
-void cf_estimate_impl::set_freqs(std::vector<float> channel_freqs)
-{
-    d_channel_freqs = channel_freqs;
-}
-
-void cf_estimate_impl::set_method(int method) { d_method = method; }
 
 } /* namespace fhss_utils */
 } /* namespace gr */

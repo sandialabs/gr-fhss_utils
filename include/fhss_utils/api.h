@@ -5,6 +5,7 @@
  * This file is a part of gr-fhss_utils
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  */
 
 #ifndef INCLUDED_FHSS_UTILS_API_H

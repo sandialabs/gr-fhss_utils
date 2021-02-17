@@ -7,7 +7,7 @@ category: '[Sandia]/FHSS Utilities'
 parameters:
 -   id: method
     label: Method
-    dtype: int
+    dtype: enum
     default: fhss_utils.RMS
     options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.COERCE]
     option_labels: [RMS, Half-Power, Coerce Only]

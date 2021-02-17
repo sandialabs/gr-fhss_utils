@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  *
@@ -12,7 +12,6 @@
 
 #include <gnuradio/fft/fft.h>
 #include <fhss_utils/fft_burst_tagger.h>
-#include <fhss_utils/constants.h>
 #include <mutex>
 //#define __USE_MKL__
 #ifdef __USE_MKL__
@@ -258,8 +257,8 @@ private:
 
     FILE* d_burst_debug_file;
 
-    gr::fft::fft_complex* d_fft;
-    gr::fft::fft_complex* d_fine_fft;
+    gr::fft::fft_complex_fwd* d_fft;
+    gr::fft::fft_complex_fwd* d_fine_fft;
 #ifdef __USE_MKL__
     DFTI_DESCRIPTOR_HANDLE m_fft;
     DFTI_DESCRIPTOR_HANDLE m_fine_fft;
@@ -310,23 +309,6 @@ private:
     timer d_other;
 
 public:
-    /**
-     * Constructor
-     *
-     * @param center_frequency - center frequency of incoming stream, unit Hz
-     * @param fft_size -
-     * @param sample_rate - sample rate of incoming stream
-     * @param burst_pre_len - XXX unit seconds
-     * @param burst_post_len - XXX unit seconds
-     * @param burst_width -XXX unit Hz
-     * @param max_bursts - XXX
-     * @param max_burst_len - XXX
-     * @param threshold - XXX unit dB
-     * @param history_size - XXX
-     * @param lookahead - XXX unit seconds
-     * @param debug - true enables debug functionality
-     *
-     */
     fft_burst_tagger_impl(float center_frequency,
                           int fft_size,
                           int sample_rate,
@@ -340,37 +322,16 @@ public:
                           int lookahead,
                           bool debug);
 
-    /**
-     * Deconstructor
-     */
-    ~fft_burst_tagger_impl();
-
-
-    /**
-     * Returns total number of bursts seen
-     *
-     * @return uint64_t - number of bursts
-     */
-    uint64_t get_n_tagged_bursts();
-
-    /**
-     * Resets burst tagger
-     */
-    void reset();
-
-    bool stop();
+    ~fft_burst_tagger_impl() override;
+    bool stop() override;
 
     int work(int noutput_items,
              gr_vector_const_void_star& input_items,
-             gr_vector_void_star& output_items);
+             gr_vector_void_star& output_items) override;
 
-    /**
-     * Sets max burst bandwidth
-     * Unit: Hz
-     *
-     * @param bw - bandwidth
-     */
-    void set_max_burst_bandwidth(double bw) { d_filter_bandwidth = bw; }
+    uint64_t get_n_tagged_bursts() override;
+    void reset() override;
+    void set_max_burst_bandwidth(double bw) override { d_filter_bandwidth = bw; }
 };
 
 } // namespace fhss_utils
