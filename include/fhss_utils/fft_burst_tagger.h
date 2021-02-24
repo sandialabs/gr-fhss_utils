@@ -17,11 +17,35 @@ namespace gr {
 namespace fhss_utils {
 
 /*!
- * \brief Tags Detected bursts
+ * \brief This block is a fast energy detector that processes a stream of complex data and
+ * will apply stream tags to identify the start, end, and approximate frequency of
+ * detected bursts of energy.
+ *
+ * Internally this block processes data one FFT at a time. It maintains a dynamic noise
+ * floor estimate for each bin over the prior `history_size` FFTs, and compares incoming
+ * FFT bins to see if they are `threshold` dB above the moving noise floor estimate. Once
+ * detected, potential bursts are observed to ensure they remain above the threshold for
+ * at least `lookahead` FFTs, after which they are tracked as detections and tagged;
+ * bursts that are shorter than this duration are likely to be charachterized as noise and
+ * ignored.
+ *
+ * Burst tags can be applied before / after the detected start / end of burst using the
+ * `burst_pre_len` and `burst_post_len` options respectively. End of burst tags are
+ * appended once the value of the center burst bin or either adjacent bin is gone for
+ * `burst_post_len` FFTs, so it is recommended to set this value to some nonzero number to
+ * reduce the chance a burst end is tagged too early. If this value is set too long,
+ * multiple bursts may be combined into one burst.
+ *
+ * Debug information including detected peak value files (saved in /tmp) and a complex PDU
+ * suitable for display on the in-tree QT Time Sink of FFTs and dynamic threshold can be
+ * endabled for debugging, but it is not recommended for normal operation as these take a
+ * non-trivial amount of compute cycles. Deeper level debug information can be enabled
+ * using compile options in the source.
+ *
  * \ingroup fhss_utils
  *
  */
-class FHSS_UTILS_API fft_burst_tagger : virtual public gr::sync_block
+class FHSS_UTILS_API fft_burst_tagger : virtual public gr::block
 {
 public:
     typedef boost::shared_ptr<fft_burst_tagger> sptr;
@@ -29,21 +53,21 @@ public:
     /*!
      * \brief Creates a new instance of fhss_utils::fft_burst_tagger.
      *
-     * @param center_frequency - center frequency of incoming stream, unit Hz
-     * @param fft_size -
+     * @param center_freq - center frequency of data stream, unit Hz
+     * @param fft_size - number of bins in the primary FFT
      * @param sample_rate - sample rate of incoming stream
-     * @param burst_pre_len - XXX unit seconds
-     * @param burst_post_len - XXX unit seconds
-     * @param burst_width -XXX unit Hz
-     * @param max_bursts - XXX
-     * @param max_burst_len - XXX
-     * @param threshold - XXX unit dB
-     * @param history_size - XXX
-     * @param lookahead - XXX unit seconds
-     * @param debug - true enables debug functionality
+     * @param burst_pre_len - number of FFTs before the burst to place the START tag
+     * @param burst_post_len - number of FFTs after the burst to place the END tag
+     * @param burst_width - estimated bandwidth of bursts in Hz
+     * @param max_bursts - maximum number of bursts allowed simultaneously (0=default)
+     * @param max_burst_len - bursts exceeding this length will be tagged immediately
+     * @param threshold - detection threshold above dynamic noise average (dB)
+     * @param history_size - number of FFTs to compute noise estimate over
+     * @param lookahead - number of FFTs a burst must be present to be tagged
+     * @param debug - true enables debug file and message output functionality
      * @return shared_ptr<fft_burst_tagger>
      */
-    static sptr make(float center_frequency,
+    static sptr make(float center_freq,
                      int fft_size,
                      int sample_rate,
                      int burst_pre_len,

@@ -123,6 +123,11 @@ const pmt::pmt_t PMTCONSTSTR__end_offset()
     static const pmt::pmt_t val = pmt::mp("end_offset");
     return val;
 }
+const pmt::pmt_t PMTCONSTSTR__cut_short()
+{
+    static const pmt::pmt_t val = pmt::mp("cut_short");
+    return val;
+}
 
 } /* namespace fhss_utils */
 } /* namespace gr */

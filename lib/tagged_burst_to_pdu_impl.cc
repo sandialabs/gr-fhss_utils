@@ -389,6 +389,13 @@ void tagged_burst_to_pdu_impl::publish_and_remove_old_bursts(const buffer& work_
         if (burst.len >= d_max_burst_size) {
             uint64_t id = burst.id;
             burst.len = std::min(burst.len, (size_t)d_max_burst_size);
+            uint64_t end_offset =
+                pmt::to_uint64(pmt::dict_ref(
+                    burst.dict, PMTCONSTSTR__start_offset(), pmt::from_uint64(0))) +
+                (d_max_burst_size * d_decimation);
+            burst.dict = pmt::dict_add(
+                burst.dict, PMTCONSTSTR__end_offset(), pmt::from_uint64(end_offset));
+            burst.dict = pmt::dict_add(burst.dict, PMTCONSTSTR__cut_short(), pmt::PMT_T);
             if (d_debug) {
                 printf("gone burst: %" PRIu64 " %zu\n", id, burst.len);
             }

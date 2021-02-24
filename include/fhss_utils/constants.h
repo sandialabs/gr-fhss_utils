@@ -38,6 +38,7 @@ FHSS_UTILS_API const pmt::pmt_t PMTCONSTSTR__duration();
 FHSS_UTILS_API const pmt::pmt_t PMTCONSTSTR__cpdus();
 FHSS_UTILS_API const pmt::pmt_t PMTCONSTSTR__start_offset();
 FHSS_UTILS_API const pmt::pmt_t PMTCONSTSTR__end_offset();
+FHSS_UTILS_API const pmt::pmt_t PMTCONSTSTR__cut_short();
 
 } // namespace fhss_utils
 } // namespace gr
