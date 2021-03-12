@@ -10,7 +10,7 @@ options:
     gen_linking: dynamic
     generate_options: qt_gui
     hier_block_src_path: '.:'
-    id: fhss_detector_reference
+    id: fhss_detector_debug
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -21,7 +21,7 @@ options:
     run_options: prompt
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: Burst Detector Reference
+    title: Burst Detector Debug
     window_size: 1600,1600
   states:
     bus_sink: false
@@ -50,7 +50,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [216, 148]
+    coordinate: [224, 148.0]
     rotation: 0
     state: enabled
 - name: decim_taps
@@ -75,7 +75,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [928, 964.0]
+    coordinate: [968, 812.0]
     rotation: 0
     state: enabled
 - name: gain
@@ -96,7 +96,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [344, 148.0]
+    coordinate: [104, 148.0]
     rotation: 0
     state: enabled
 - name: raster_size
@@ -135,13 +135,13 @@ blocks:
     start: '0'
     step: '1'
     stop: '40'
-    value: '4'
+    value: '10'
     widget: counter_slider
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [216, 20.0]
+    coordinate: [224, 20.0]
     rotation: 0
     state: enabled
 - name: analog_fastnoise_source_x_0
@@ -149,7 +149,7 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    amp: 1000*0
+    amp: '0'
     comment: Add noise impariment
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -189,7 +189,7 @@ blocks:
     alias: ''
     append: 'False'
     comment: ''
-    file: /tmp/a.sc16
+    file: /tmp/a.sigmf-meta
     type: short
     unbuffered: 'False'
     vlen: '1'
@@ -222,6 +222,28 @@ blocks:
     coordinate: [24, 396.0]
     rotation: 0
     state: enabled
+- name: blocks_file_source_0_0_0
+  id: blocks_file_source
+  parameters:
+    affinity: ''
+    alias: ''
+    begin_tag: pmt.PMT_NIL
+    comment: ''
+    file: /data/latest.sigmf-data
+    length: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    repeat: 'False'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [208, 292.0]
+    rotation: 0
+    state: disabled
 - name: blocks_interleaved_short_to_complex_0_1
   id: blocks_interleaved_short_to_complex
   parameters:
@@ -249,9 +271,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1312, 1128.0]
+    coordinate: [1312, 1096.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: blocks_message_debug_0_1_0
   id: blocks_message_debug
   parameters:
@@ -306,6 +328,24 @@ blocks:
     coordinate: [1152, 396.0]
     rotation: 0
     state: true
+- name: blocks_skiphead_0
+  id: blocks_skiphead
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: '64'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [480, 348.0]
+    rotation: 0
+    state: disabled
 - name: blocks_throttle_0
   id: blocks_throttle
   parameters:
@@ -332,9 +372,9 @@ blocks:
     comment: ''
     hide: part
     label: Burst Width [Hz]
-    short_id: ''
+    short_id: w
     type: intx
-    value: int(2500e3)
+    value: int(2000e3)
   states:
     bus_sink: false
     bus_source: false
@@ -400,14 +440,14 @@ blocks:
     comment: ''
     hide: none
     label: Decimation
-    short_id: ''
+    short_id: d
     type: intx
-    value: '16'
+    value: '4'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [488, 132]
+    coordinate: [504, 132.0]
     rotation: 0
     state: enabled
 - name: fft_size
@@ -417,14 +457,14 @@ blocks:
     comment: ''
     hide: none
     label: FFT Size
-    short_id: ''
+    short_id: f
     type: intx
     value: '128'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [488, 228]
+    coordinate: [400, 132.0]
     rotation: 0
     state: enabled
 - name: fhss_utils_cf_estimate_0
@@ -471,13 +511,30 @@ blocks:
     coordinate: [200, 804.0]
     rotation: 0
     state: enabled
+- name: fhss_utils_sigmf_meta_writer_0
+  id: fhss_utils_sigmf_meta_writer
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    dtype: ci16_le
+    filename: /data/latest.sigmf-meta
+    freq: int(center_freq)
+    rate: int(samp_rate)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [472, 700.0]
+    rotation: 180
+    state: true
 - name: fhss_utils_tagged_burst_to_pdu_0
   id: fhss_utils_tagged_burst_to_pdu
   parameters:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation
+    decimation: int(decimation)
     max_burst_time: max_burst_time
     maxoutbuf: '0'
     min_burst_time: min_burst_time
@@ -525,7 +582,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1040, 708.0]
+    coordinate: [1056, 676.0]
     rotation: 0
     state: disabled
 - name: hist_time
@@ -537,7 +594,7 @@ blocks:
     label: History Time [s]
     short_id: ''
     type: eng_float
-    value: '0.0002'
+    value: '0.002'
   states:
     bus_sink: false
     bus_source: false
@@ -554,7 +611,7 @@ blocks:
     label: Lookahead Time [s]
     short_id: ''
     type: eng_float
-    value: '0.0001'
+    value: '0.0002'
   states:
     bus_sink: false
     bus_source: false
@@ -571,7 +628,7 @@ blocks:
     label: Max Burst Time [s]
     short_id: ''
     type: eng_float
-    value: '0.02'
+    value: '0.05'
   states:
     bus_sink: false
     bus_source: false
@@ -588,7 +645,7 @@ blocks:
     label: Min Burst Time [s]
     short_id: ''
     type: eng_float
-    value: '0.0002'
+    value: '0.001'
   states:
     bus_sink: false
     bus_source: false
@@ -858,7 +915,7 @@ blocks:
     bus_structure: null
     coordinate: [1168, 900.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: pdu_utils_pdu_fir_filter_1
   id: pdu_utils_pdu_fir_filter
   parameters:
@@ -875,7 +932,7 @@ blocks:
     bus_structure: null
     coordinate: [960, 876.0]
     rotation: 0
-    state: enabled
+    state: bypassed
 - name: pdu_utils_pdu_head_tail_0
   id: pdu_utils_pdu_head_tail
   parameters:
@@ -909,7 +966,7 @@ blocks:
     bus_structure: null
     coordinate: [320, 1308.0]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: pdu_utils_pdu_split_0_0
   id: pdu_utils_pdu_split
   parameters:
@@ -927,7 +984,7 @@ blocks:
     bus_structure: null
     coordinate: [1040, 1112.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: post_burst_time
   id: parameter
   parameters:
@@ -937,7 +994,7 @@ blocks:
     label: Post Burst Time [s]
     short_id: ''
     type: eng_float
-    value: '0.00025'
+    value: '0.0002'
   states:
     bus_sink: false
     bus_source: false
@@ -954,7 +1011,7 @@ blocks:
     label: Pre Burst Time [s]
     short_id: ''
     type: eng_float
-    value: '0.00025'
+    value: '0.0002'
   states:
     bus_sink: false
     bus_source: false
@@ -1115,7 +1172,7 @@ blocks:
     bus_structure: null
     coordinate: [664, 1100.0]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: qtgui_time_sink_x_0_0_0_0_0_0
   id: qtgui_time_sink_x
   parameters:
@@ -1169,14 +1226,14 @@ blocks:
     marker7: '-1'
     marker8: '-1'
     marker9: '-1'
-    name: '"FM Demodulation"'
+    name: '"Burst Tagger Threshold"'
     nconnections: '1'
     size: '102400'
     srate: '1'
     stemplot: 'False'
     style1: '1'
     style10: '1'
-    style2: '1'
+    style2: '3'
     style3: '1'
     style4: '1'
     style5: '1'
@@ -1203,8 +1260,8 @@ blocks:
     width8: '1'
     width9: '1'
     ylabel: Amplitude
-    ymax: '10'
-    ymin: '-60'
+    ymax: '-50'
+    ymin: '-90'
     yunit: '""'
   states:
     bus_sink: false
@@ -1310,6 +1367,103 @@ blocks:
     coordinate: [1040, 1236.0]
     rotation: 0
     state: disabled
+- name: qtgui_time_sink_x_0_0_0_0_0_1
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: 2,3,1,1
+    label1: ' '
+    label10: ''
+    label2: ' '
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '"Bandwidth Estimator"'
+    nconnections: '1'
+    size: '102400'
+    srate: samp_rate/decimation
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '2'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '.001'
+    tr_level: '0.000001'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: msg_complex
+    update_time: '0.01'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '-40'
+    ymin: '-100'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [936, 972.0]
+    rotation: 0
+    state: enabled
 - name: qtgui_waterfall_sink_x_0
   id: qtgui_waterfall_sink_x
   parameters:
@@ -1400,7 +1554,7 @@ blocks:
     color9: '0'
     comment: ''
     fc: '0'
-    fftsize: '256'
+    fftsize: '1024'
     freqhalf: 'True'
     grid: 'False'
     gui_hint: 1,0,1,3
@@ -1446,7 +1600,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [488, 20]
+    coordinate: [504, 20.0]
     rotation: 0
     state: enabled
 - name: sandia_utils_complex_to_interleaved_short_0
@@ -1463,7 +1617,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [784, 828.0]
+    coordinate: [760, 828.0]
     rotation: 0
     state: disabled
 - name: sandia_utils_csv_writer_0_0
@@ -1484,22 +1638,6 @@ blocks:
     coordinate: [728, 1604.0]
     rotation: 0
     state: disabled
-- name: sandia_utils_sigmf_meta_writer_0
-  id: sandia_utils_sigmf_meta_writer
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    filename: /data/latest.sigmf-meta
-    freq: int(center_freq)
-    rate: int(samp_rate)
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [488, 708.0]
-    rotation: 180
-    state: enabled
 - name: threshold
   id: parameter
   parameters:
@@ -1509,12 +1647,12 @@ blocks:
     label: Threshold
     short_id: t
     type: eng_float
-    value: '8'
+    value: '10'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [352, 20.0]
+    coordinate: [400, 20.0]
     rotation: 0
     state: enabled
 - name: uhd_usrp_source_1
@@ -1985,17 +2123,21 @@ connections:
 - [analog_fastnoise_source_x_0, '0', blocks_add_xx_0, '1']
 - [blocks_add_xx_0, '0', blocks_multiply_const_vxx_0_1, '0']
 - [blocks_file_source_0_0, '0', blocks_interleaved_short_to_complex_0_1, '0']
+- [blocks_file_source_0_0_0, '0', blocks_skiphead_0, '0']
 - [blocks_interleaved_short_to_complex_0_1, '0', blocks_throttle_0, '0']
 - [blocks_multiply_const_vxx_0_1, '0', virtual_sink_0, '0']
 - [blocks_probe_rate_0, rate, blocks_message_debug_0_1_0, print]
+- [blocks_skiphead_0, '0', blocks_throttle_0, '0']
 - [blocks_throttle_0, '0', blocks_add_xx_0, '0']
+- [fhss_utils_cf_estimate_0, debug, fhss_utils_sigmf_meta_writer_0, in]
+- [fhss_utils_cf_estimate_0, debug, qtgui_time_sink_x_0_0_0_0_0_1, in]
 - [fhss_utils_cf_estimate_0, out, pdu_utils_pdu_fir_filter_1, pdu_in]
+- [fhss_utils_cf_estimate_0, out, pdu_utils_pdu_split_0_0, pdu_in]
 - [fhss_utils_fft_burst_tagger_0, '0', fhss_utils_tagged_burst_to_pdu_0, '0']
 - [fhss_utils_fft_burst_tagger_0, '0', sandia_utils_complex_to_interleaved_short_0,
   '0']
 - [fhss_utils_fft_burst_tagger_0, debug, qtgui_time_sink_x_0_0_0_0_0_0, in]
 - [fhss_utils_tagged_burst_to_pdu_0, cpdus, fhss_utils_cf_estimate_0, in]
-- [fhss_utils_tagged_burst_to_pdu_0, cpdus, sandia_utils_sigmf_meta_writer_0, in]
 - [pdu_utils_pdu_clock_recovery_0, pdu_out, pdu_utils_pdu_split_0_0, pdu_in]
 - [pdu_utils_pdu_clock_recovery_0, pdu_out, qtgui_time_sink_x_0_0_0_0_0_0_0_0, in]
 - [pdu_utils_pdu_clock_recovery_0_0, pdu_out, virtual_sink_0_0_0, '0']

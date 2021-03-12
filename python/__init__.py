@@ -26,6 +26,7 @@ from .s_and_h_detector import s_and_h_detector
 from .coarse_dehopper import coarse_dehopper
 from .fine_dehopper import fine_dehopper
 from .fsk_burst_extractor_hier import fsk_burst_extractor_hier
+from .sigmf_meta_writer import sigmf_meta_writer
 #
 
 try:

@@ -1,0 +1,37 @@
+id: fhss_utils_sigmf_meta_writer
+label: SigMF-meta Writer
+category: '[Sandia]/FHSS Utilities'
+
+templates:
+  imports: import fhss_utils
+  make: fhss_utils.sigmf_meta_writer(${filename}, ${freq}, ${rate}, ${label}, ${dtype})
+
+parameters:
+-   id: filename
+    label: Filename
+    dtype: file_save
+-   id: freq
+    label: Frequency (Hz)
+    dtype: int
+-   id: rate
+    label: Samp Rate (Hz)
+    dtype: int
+-   id: label
+    label: Annotation Label
+    dtype: string
+    default: use_burst_id
+    options: ['use_burst_id']
+    option_labels: [Use Burst ID]
+-   id: dtype
+    label: SigMF Data Type
+    dtype: string
+    default: 'ci16_le'
+    options: ['ci16_le', 'cf32_le']
+    option_labels: [Short, Float]
+    hide: part
+
+inputs:
+-   domain: message
+    id: in
+
+file_format: 1

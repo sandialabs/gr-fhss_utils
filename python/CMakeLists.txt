@@ -24,7 +24,8 @@ GR_PYTHON_INSTALL(
     coarse_dehopper.py
     fine_dehopper.py
     fsk_burst_extractor_hier.py
-    burst_tag_debug.py DESTINATION ${GR_PYTHON_DIR}/fhss_utils
+    burst_tag_debug.py
+    sigmf_meta_writer.py DESTINATION ${GR_PYTHON_DIR}/fhss_utils
 )
 
 ########################################################################

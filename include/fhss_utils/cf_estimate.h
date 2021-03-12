@@ -20,10 +20,15 @@ namespace fhss_utils {
  * \brief Estimates center frequency of a burst and re-centers it.
  * \ingroup fhss_utils
  *\n
- * Three Methods are provided for Center Frequency Estimating\n
- * -Coerce quantizes to the nearest frequency in the channel_freqs list\n
- * -Root-Mean_Squared method\n
- * -Half Power is a half-power point in the cumulative sum of the PSD\n
+ * Four Methods are provided for Center Frequency Estimation:\n
+ * -Root-Mean_Squared: RMS estimate, this is the best for general use.\n
+ * -Half Power: uses the center point in the cumulative sum of the PSD, this
+ * method is not great for general use.\n
+ * -Middle Out: uses the relationship between the peak and noise floor to
+ * estimate the bandwidth, this method is best for high SNR signals. \n
+ * -Coerce Only moves center freq to the nearest entry in the provided
+ * channel_freqs list\n
+ * Frequency coercion also be applied to any method if the list is provided.
  *\n
  * Parameters:\n
  * -method selects method of center frequency estimation.\n
@@ -47,9 +52,11 @@ public:
      *
      * \param method Center Frequency Estimation method #cf_method
      * \param channel_freqs Channel frequencies to set for coerce method.
+     * \param snr_min Expected minimum SNR (only used by middle out method).
      */
     static sptr make(int method = 0,
-                     std::vector<float> channel_freqs = std::vector<float>());
+                     std::vector<float> channel_freqs = std::vector<float>(),
+                     float snr_min = 10);
 
     /*!
      * \brief Set channel center frequencies
@@ -77,7 +84,7 @@ public:
  * \brief Center frequency estimation method options
  *
  */
-enum cf_method { RMS = 0, HALF_POWER, COERCE };
+enum cf_method { RMS = 0, HALF_POWER, MIDDLE_OUT, COERCE };
 
 
 } // namespace fhss_utils

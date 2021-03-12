@@ -9,12 +9,17 @@ parameters:
     label: Method
     dtype: int
     default: fhss_utils.RMS
-    options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.COERCE]
-    option_labels: [RMS, Half-Power, Coerce Only]
+    options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.MIDDLE_OUT, fhss_utils.COERCE]
+    option_labels: [RMS, Half-Power, Middle Out, Coerce Only]
 -   id: channel_freqs
     label: Channel Center Frequencies
     dtype: real_vector
     default: '[]'
+    hide: part
+-   id: snr_min
+    label: Minimum SNR
+    dtype: float
+    default: 10.0
     hide: part
 
 inputs:
@@ -32,7 +37,7 @@ outputs:
 
 templates:
     imports: import fhss_utils
-    make: fhss_utils.cf_estimate(${method}, ${channel_freqs})
+    make: fhss_utils.cf_estimate(${method}, ${channel_freqs}, ${snr_min})
     callbacks:
     - set_freqs(${channel_freqs})
     - set_method(${method})

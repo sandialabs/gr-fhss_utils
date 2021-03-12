@@ -3,6 +3,7 @@
  * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
+ * Copyright 2021 Jacob Gilbert
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -26,14 +27,14 @@ private:
 
     // this block supports a few different estimation methods
     int d_method;
+    float d_snr_min;
+    std::vector<gr_complex> d_bug;
 
     // fft tools
     void fft_setup(int power);
     void fft_cleanup();
     std::vector<gr::fft::fft_complex*> d_ffts;
     std::vector<float*> d_windows;
-    std::vector<float> d_fft_mag2_gains;
-    float* d_mags2;
     float* d_magnitude_shifted_f;
 
     // correction tools
@@ -53,11 +54,14 @@ private:
     float rms_bw(std::vector<float> mags2,
                  std::vector<float> freq_axis,
                  float center_frequency);
+    float middle_out(std::vector<float> mags2,
+                     std::vector<float> freq_axis,
+                     float noise_floor,
+                     float &bandwidth);
     float estimate_pwr(std::vector<float> mags2,
                        std::vector<float> freq_axis,
                        float center_frequency,
-                       float bandwidth,
-                       float fft_mag2_gain);
+                       float bandwidth);
 
 public:
     /**
@@ -66,7 +70,7 @@ public:
      * @param method - estimate method #cf_method
      * @param channel_freqs - channel freq list for coerce method
      */
-    cf_estimate_impl(int method, std::vector<float> channel_freqs);
+    cf_estimate_impl(int method, std::vector<float> channel_freqs, float snr_min);
 
     /**
      * Deconstructor
