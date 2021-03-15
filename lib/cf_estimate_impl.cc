@@ -27,12 +27,6 @@ const int MIN_BURST_SIZE = pow(2, MIN_FFT_POWER) * MIN_NFFTS;
 // PDUs should be large enough to take MIN_NFFTS of size pow(2,MIN_FFT_POWER)
 
 
-/*
- *    TODO    there is WAY too much use of copy constructors for std::vectors
- *    TODO    in the various helper functions implemneted in this block...
- */
-
-
 cf_estimate::sptr cf_estimate::make(int method, std::vector<float> channel_freqs, float snr_min)
 {
     return gnuradio::get_initial_sptr(new cf_estimate_impl(method, channel_freqs, snr_min));

@@ -215,9 +215,10 @@ fft_burst_tagger_impl::fft_burst_tagger_impl(float center_freq,
     for (size_t i = 0; i < d_fft_size; i++)
         d_mask_owners[i].uid = i;
 
-    // Area to ignore around an already found signal in FFT bins
-    // Internal representation is in FFT bins
-    d_burst_width = burst_width / (sample_rate / fft_size);
+    // Area to ignore around an already found signal in FFT bins, rounded up to multiple
+    // of two, which also helps compensate for the window width
+    d_burst_width = 2 * std::ceil(1.0 * burst_width / (2.0 * sample_rate / fft_size));
+    GR_LOG_INFO(d_logger, boost::format("bursts width is +/- %d FFT bins") % (d_burst_width / 2));
 
     d_filter_bandwidth = 0;
 
@@ -315,18 +316,11 @@ void fft_burst_tagger_impl::update_circular_buffer(void)
             d_history_primed = true;
         }
     } else if ((d_abs_fft_index & 0x3) == 0) {
-        std::stringstream sss,ss1;
-        sss << "NBM:  [";
-        ss1 << "NBM1: [";
         for (size_t i = 0; i < d_fft_size; i++) {
             if (d_burst_mask_i[i] != 0 && d_burst_mask_j[i] != 0) {
-            //if (d_burst_mask_i[i] != 0) {
                 d_baseline_sum_f[i] = d_bin_averages[i].add(d_magnitude_shifted_f[i]);
             }
-            sss << (int )(d_burst_mask_i[i] != 0);// << ",";
-            ss1 << (int )(d_burst_mask_j[i] != 0);// << ",";
         }
-        //std::cout << sss.str() << "]   " << std::cout << ss1.str() << "]" << std::endl;
         memcpy(d_burst_mask_j, d_burst_mask_i, d_fft_size * sizeof(uint32_t));
     }
     // Copy the relative magnitude history into circular buffer
@@ -1091,4 +1085,4 @@ int fft_burst_tagger_impl::general_work(int noutput_items,
 }
 
 } /* namespace fhss_utils */
-} /* namespace gr */ // check for center frequency updates
+} /* namespace gr */
