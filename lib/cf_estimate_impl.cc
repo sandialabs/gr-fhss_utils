@@ -269,12 +269,12 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
     double shift = 0.0;
     // these methods return 'shift', a frequency correction from [-0.5,0.5]
     if (d_method == RMS) {
-        shift = this->rms(mags2, freq_axis, center_frequency, sample_rate);
+        shift = this->rms_cf(mags2, freq_axis, center_frequency, sample_rate);
     } else if (d_method == HALF_POWER) {
-        shift = this->half_power(mags2);
+        shift = this->half_power_cf(mags2);
     } else if (d_method == MIDDLE_OUT) {
         // this is going to update the bandwdith value too
-        shift = this->middle_out(mags2, freq_axis, noise_floor_db, bandwidth);
+        shift = this->middle_out(mags2, bin_size, noise_floor_db, bandwidth);
     } else {
         // in COERCE mode no estimation is performed
     }
@@ -328,52 +328,6 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
 }
 
 
-//////////////////////////////////////////////
-// center frequency estimation methods
-//////////////////////////////////////////////
-float cf_estimate_impl::half_power(std::vector<float> mags2)
-{
-    // calculate the total energy
-    double energy = 0.0;
-    for (auto& p : mags2) {
-        energy += p;
-    }
-
-    // find center
-    double half_power = energy / 2.0;
-    double running_total = 0.0;
-    size_t half_power_idx = 0;
-    for (size_t i = 0; running_total < half_power; i++) {
-        running_total += mags2[i];
-        half_power_idx = i;
-    }
-
-    // convert index to frequency and return the correction/shift
-    return ((double)half_power_idx / (double)mags2.size()) - 0.5;
-}
-
-float cf_estimate_impl::rms(std::vector<float> mags2,
-                            std::vector<float> freq_axis,
-                            float center_frequency,
-                            float sample_rate)
-{
-    // python: cf_estimate = sum( [ f*(p**2) for f,p in zip(freq_axis, freq_mag)] ) /
-    // energy
-    double energy = 0.0;
-    for (auto& p : mags2) {
-        energy += p;
-    }
-
-    // calculate the top integral: integrate(f*PSD(f)^2, df)
-    double top_integral = 0.0;
-    for (size_t i = 0; i < mags2.size(); i++) {
-        top_integral += freq_axis[i] * mags2[i];
-    }
-
-    // normalize by total energy
-    return ((top_integral / energy) - center_frequency) / sample_rate;
-}
-
 float cf_estimate_impl::coerce_frequency(float center_frequency, float sample_rate)
 {
     // we can only coerce the frequencies if we have a list of good frequencies
@@ -397,12 +351,54 @@ float cf_estimate_impl::coerce_frequency(float center_frequency, float sample_ra
 
 } /* end coerce_frequency */
 
+//////////////////////////////////////////////
+// center frequency estimation methods
+//////////////////////////////////////////////
+float cf_estimate_impl::rms_cf(const std::vector<float> &mags2,
+                               const std::vector<float> &freq_axis,
+                               float center_frequency,
+                               float sample_rate)
+{
+    // python: cf_estimate = sum( [ f*(p**2) for f,p in zip(freq_axis, freq_mag)] ) /
+    // energy
+    double energy = 0.0;
+    for (auto& p : mags2) {
+        energy += p;
+    }
 
-//////////////////////////////////////////////
-// BW and SNR estimation methods
-//////////////////////////////////////////////
-float cf_estimate_impl::rms_bw(std::vector<float> mags2,
-                               std::vector<float> freq_axis,
+    // calculate the top integral: integrate(f*PSD(f)^2, df)
+    double top_integral = 0.0;
+    for (size_t i = 0; i < mags2.size(); i++) {
+        top_integral += freq_axis[i] * mags2[i];
+    }
+
+    // normalize by total energy
+    return ((top_integral / energy) - center_frequency) / sample_rate;
+} /* end rms_cf */
+
+float cf_estimate_impl::half_power_cf(const std::vector<float> &mags2)
+{
+    // calculate the total energy
+    double energy = 0.0;
+    for (auto& p : mags2) {
+        energy += p;
+    }
+
+    // find center
+    double half_power = energy / 2.0;
+    double running_total = 0.0;
+    size_t half_power_idx = 0;
+    for (size_t i = 0; running_total < half_power; i++) {
+        running_total += mags2[i];
+        half_power_idx = i;
+    }
+
+    // convert index to frequency and return the correction/shift
+    return ((double)half_power_idx / (double)mags2.size()) - 0.5;
+} /* end half_power_cf */
+
+float cf_estimate_impl::rms_bw(const std::vector<float> &mags2,
+                               const std::vector<float> &freq_axis,
                                float center_frequency)
 {
     // python: bw_rms = np.sqrt( sum( [(abs(f-cf_estimate)**2) * (p**2) for f,p in
@@ -420,14 +416,14 @@ float cf_estimate_impl::rms_bw(std::vector<float> mags2,
 
     // normalize by total energy and take sqrt
     return std::sqrt(top_integral / energy);
-}
+} /* end rms_bw */
 
 /*
  * this computes the bandwidth as defined by the portion of the signal that is
  * continuously greater than halfway betwen the peak-8dB and the noise floor
  */
-float cf_estimate_impl::middle_out(std::vector<float> mags2,
-                                   std::vector<float> freq_axis,
+float cf_estimate_impl::middle_out(const std::vector<float> &mags2,
+                                   float bin_resolution,
                                    float noise_floor_db,
                                    float &bandwidth)
 {
@@ -440,32 +436,45 @@ float cf_estimate_impl::middle_out(std::vector<float> mags2,
     //threshold = pow(10, (noise_floor_db-0.1) / 10.0);
 
     // now determine the first index below the threshold in either direction
-    auto high(peak);
-    auto low(peak);
-    for (; high < mags2.end()-1; high++)
-        if (*high <= threshold) break;
-    for (; low > mags2.begin(); low--)
-        if (*low <= threshold) break;
-    int high_idx = peak_idx + std::distance(peak, high);
-    int low_idx = peak_idx + std::distance(peak, low);
+    auto hi_bin(peak);
+    auto lo_bin(peak);
+    for (; hi_bin < mags2.end()-1; hi_bin++)
+        if (*hi_bin <= threshold) break;
+    for (; lo_bin > mags2.begin(); lo_bin--)
+        if (*lo_bin <= threshold) break;
+    int hi_idx = peak_idx + std::distance(peak, hi_bin);
+    int lo_idx = peak_idx + std::distance(peak, lo_bin);
 
-    bandwidth = freq_axis[high_idx] - freq_axis[low_idx];
-    float shift = (high_idx + low_idx) *0.5 - (mags2.size() - 1) * 0.5;
-    shift /= mags2.size();
-
-    for (int i = low_idx; i <= high_idx; i++)
+    for (int i = lo_idx; i <= hi_idx; i++)
         d_bug[i] = std::real(d_bug[i]) + 1j * 10*log10(threshold);
     d_bug[peak_idx] = std::real(d_bug[peak_idx]) + 1j * 10*log10(*peak);
 
+    // bandwidth gets compensated for the linear-interpolated distance to the threshold
+    float bw_bins = (hi_idx - (threshold - *hi_bin) / (*(hi_bin - 1) - *hi_bin)) -
+                    (lo_idx + (threshold - *lo_bin) / (*(lo_bin + 1) - *lo_bin));
+    bandwidth = bw_bins * bin_resolution;
+
+    // do linear interpolation to compensate for disparate magnitudes at threshold bins
+    float sbi_factor = 0;  // sub-bin interpolation factor, %FFT bin to adjust high/low bin by
+    if (*hi_bin > *lo_bin) {
+      // if the higher bin is closer to the threshold, we will be shifting lower bin up in freq
+        sbi_factor = (*hi_bin - *lo_bin) / (*(lo_bin + 1) - *lo_bin);
+    } else {
+        // if the lower bin is closer to the threshold, we will be shifting higher bin down in freq
+        sbi_factor = -1 * (*lo_bin - *hi_bin) / (*(hi_bin - 1) - *hi_bin);
+    }
+    float shift = (hi_idx + lo_idx + sbi_factor) * 0.5 - (mags2.size() - 1) * 0.5;
+    shift /= mags2.size();
+
     return shift;
-}
+} /* end middle_out */
 
 /*
  * FIXME: using the frequency axis is an odd way to do this... in general the logic here
  * could use some cleanup
  */
-float cf_estimate_impl::estimate_pwr(std::vector<float> mags2,
-                                     std::vector<float> freq_axis,
+float cf_estimate_impl::estimate_pwr(const std::vector<float> &mags2,
+                                     const std::vector<float> &freq_axis,
                                      float center_frequency,
                                      float bandwidth)
 {
@@ -480,7 +489,7 @@ float cf_estimate_impl::estimate_pwr(std::vector<float> mags2,
 
     // return the total signal power
     return (10 * log10(signal_power));
-}
+} /* end estimate_pwr */
 
 //////////////////////////////////////////////
 // getters/setters

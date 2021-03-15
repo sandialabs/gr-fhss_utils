@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# 
+#
 # Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
 # retains certain rights in this software.
-# 
+#
 # SPDX-License-Identifier: GPL-3.0-or-later
-# 
+#
 
 from gnuradio import gr, gr_unittest
 from gnuradio import blocks
@@ -79,7 +79,7 @@ class qa_cf_estimate (gr_unittest.TestCase):
         # connections
         self.tb.msg_connect((self.emitter, 'msg'), (self.cf, 'in'))
         self.tb.msg_connect((self.cf, 'out'), (self.debug, 'store'))
-        
+
         # data
         in_data = (1+0j,) * 2048
         i_vec = pmt.init_c32vector(len(in_data), in_data)
@@ -125,14 +125,15 @@ class qa_cf_estimate (gr_unittest.TestCase):
         self.tb.msg_connect((self.sm, 'out'), (self.rt, 'in'))
         self.tb.msg_connect((self.rt, 'out'), (self.cf, 'in'))
         self.tb.msg_connect((self.cf, 'out'), (self.debug, 'store'))
-        
+
         # original data
         in_data = [0xAA] * 10 + [0x69] * 10 + [0x55] * 10 # 30 bytes = 240 bits = 1920 samples
         i_vec = pmt.init_u8vector(len(in_data), in_data)
+        fc = 100e6
 
         meta = pmt.make_dict()
         meta = pmt.dict_add(meta, pmt.intern("sample_rate"), pmt.from_float(1e6))
-        meta = pmt.dict_add(meta, pmt.intern("center_frequency"), pmt.from_float(100.0e6))
+        meta = pmt.dict_add(meta, pmt.intern("center_frequency"), pmt.from_float(fc))
         in_pdu = pmt.cons(meta, i_vec)
 
         self.tb.start()
@@ -143,8 +144,6 @@ class qa_cf_estimate (gr_unittest.TestCase):
         self.tb.wait()
 
         # parse output
-        #print("got ", list(pmt.to_python(pmt.cdr(self.debug.get_message(0)))))
-        #print("got ", pmt.car(self.debug.get_message(0)))
         rcv = self.debug.get_message(0)
         rcv_meta = pmt.car(rcv)
         rcv_data = pmt.cdr(rcv)
@@ -152,11 +151,13 @@ class qa_cf_estimate (gr_unittest.TestCase):
         # asserts
         rcv_cf = pmt.to_double(pmt.dict_ref(rcv_meta, pmt.intern("center_frequency"), pmt.PMT_NIL))
         expected_cf = 100e6 + samp_rate * rot_offset # we rotated the burst 62500 Hz off
-        self.assertTrue(abs(rcv_cf - expected_cf) < 100) # less than 100 Hz off
+        max_diff = samp_rate / 256 / 2 # half an FFT bin error allowed
+        #print("RMS: got ", rcv_cf - fc, " , expected ", expected_cf-fc, "(diff ", rcv_cf-expected_cf, ")")
+        self.assertTrue(abs(rcv_cf - expected_cf) < max_diff)
 
     def test_half_power_metadata (self):
         samp_rate = 1e6
-        rot_offset = 1.0/16.0
+        rot_offset = -4.0/16.0
         self.emitter = pdu_utils.message_emitter()
         self.cf = fhss_utils.cf_estimate(fhss_utils.HALF_POWER, [])
         self.sm = self.simple_modulator()
@@ -167,14 +168,15 @@ class qa_cf_estimate (gr_unittest.TestCase):
         self.tb.msg_connect((self.sm, 'out'), (self.rt, 'in'))
         self.tb.msg_connect((self.rt, 'out'), (self.cf, 'in'))
         self.tb.msg_connect((self.cf, 'out'), (self.debug, 'store'))
-        
+
         # original data
         in_data = [0xAA] * 10 + [0x69] * 10 + [0x55] * 10 # 30 bytes = 240 bits = 1920 samples
         i_vec = pmt.init_u8vector(len(in_data), in_data)
+        fc = 100e6
 
         meta = pmt.make_dict()
         meta = pmt.dict_add(meta, pmt.intern("sample_rate"), pmt.from_float(1e6))
-        meta = pmt.dict_add(meta, pmt.intern("center_frequency"), pmt.from_float(100.0e6))
+        meta = pmt.dict_add(meta, pmt.intern("center_frequency"), pmt.from_float(fc))
         in_pdu = pmt.cons(meta, i_vec)
 
         self.tb.start()
@@ -185,8 +187,6 @@ class qa_cf_estimate (gr_unittest.TestCase):
         self.tb.wait()
 
         # parse output
-        #print("got ", list(pmt.to_python(pmt.cdr(self.debug.get_message(0)))))
-        #print("got ", pmt.car(self.debug.get_message(0)))
         rcv = self.debug.get_message(0)
         rcv_meta = pmt.car(rcv)
         rcv_data = pmt.cdr(rcv)
@@ -194,7 +194,55 @@ class qa_cf_estimate (gr_unittest.TestCase):
         # asserts
         rcv_cf = pmt.to_double(pmt.dict_ref(rcv_meta, pmt.intern("center_frequency"), pmt.PMT_NIL))
         expected_cf = 100e6 + samp_rate * rot_offset # we rotated the burst 62500 Hz off
-        self.assertTrue(abs(rcv_cf - expected_cf) < 1.0) # less than 1 Hz off (no noise)
+        max_diff = samp_rate / 256 / 2 # half an FFT bin error allowed
+        #print("H-P: got ", rcv_cf - fc, " , expected ", expected_cf-fc, "(diff ", rcv_cf-expected_cf, ")")
+        self.assertTrue(abs(rcv_cf - expected_cf) < max_diff)
+
+
+    def test_middle_out_metadata (self):
+        samp_rate = 1e6
+        rot_offset = 1.0/16.0
+        self.emitter = pdu_utils.message_emitter()
+        self.cf = fhss_utils.cf_estimate(fhss_utils.MIDDLE_OUT, [])
+        self.sm = self.simple_modulator()
+        self.rt = self.pdu_rotate(rot_offset)
+        self.debug = blocks.message_debug()
+
+        self.tb.msg_connect((self.emitter, 'msg'), (self.sm, 'in'))
+        #self.tb.msg_connect((self.cf, 'debug'), (self.debug, 'print'))
+        self.tb.msg_connect((self.sm, 'out'), (self.rt, 'in'))
+        self.tb.msg_connect((self.rt, 'out'), (self.cf, 'in'))
+        self.tb.msg_connect((self.cf, 'out'), (self.debug, 'store'))
+
+        # original data
+        in_data = [0xAA] * 10 + [0x69] * 10 + [0x55] * 10 # 30 bytes = 240 bits = 1920 samples
+        i_vec = pmt.init_u8vector(len(in_data), in_data)
+        fc = 100e6
+
+        meta = pmt.make_dict()
+        meta = pmt.dict_add(meta, pmt.intern("sample_rate"), pmt.from_float(1e6))
+        meta = pmt.dict_add(meta, pmt.intern("center_frequency"), pmt.from_float(fc))
+        meta = pmt.dict_add(meta, pmt.intern("noise_density"), pmt.from_float(-105.0))
+        in_pdu = pmt.cons(meta, i_vec)
+
+        self.tb.start()
+        time.sleep(.1)
+        self.emitter.emit(in_pdu)
+        time.sleep(.1)
+        self.tb.stop()
+        self.tb.wait()
+
+        # parse output
+        rcv = self.debug.get_message(0)
+        rcv_meta = pmt.car(rcv)
+        rcv_data = pmt.cdr(rcv)
+
+        # asserts
+        rcv_cf = pmt.to_double(pmt.dict_ref(rcv_meta, pmt.intern("center_frequency"), pmt.PMT_NIL))
+        expected_cf = 100e6 + samp_rate * rot_offset # we rotated the burst 62500 Hz off
+        max_diff = samp_rate / 256 / 2 # half an FFT bin error allowed
+        #print("M-O: got ", rcv_cf - fc, " expected ", expected_cf-fc, "(diff ", rcv_cf-expected_cf, ")")
+        self.assertTrue(abs(rcv_cf - expected_cf) < max_diff)
 
 
 if __name__ == '__main__':

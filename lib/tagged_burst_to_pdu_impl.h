@@ -79,9 +79,9 @@ struct buffer {
         data.insert(data.end(), d, d + length);
     }
 
-    void add_tags(const std::vector<tag_t>& new_b,
-                  const std::vector<tag_t>& rx_time,
-                  const std::vector<tag_t> gone_b)
+    void add_tags(const std::vector<tag_t> &new_b,
+                  const std::vector<tag_t> &rx_time,
+                  const std::vector<tag_t> &gone_b)
     {
         new_burst_tags.insert(new_burst_tags.end(), new_b.begin(), new_b.end());
         rx_time_tags.insert(rx_time_tags.end(), rx_time.begin(), rx_time.end());

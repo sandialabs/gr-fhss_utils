@@ -41,27 +41,29 @@ private:
     blocks::rotator d_rotate;
     std::vector<gr_complex> d_corrected_burst;
 
-    // coerce tools
+    // frequency list coercion
     std::vector<float> d_channel_freqs;
     float coerce_frequency(float center_frequency, float sample_rate);
-    float rms(std::vector<float> mags2,
-              std::vector<float> freq_axis,
-              float center_frequency,
-              float sample_rate);
-    float half_power(std::vector<float> mags2);
 
-    // BW and SNR estimation
-    float rms_bw(std::vector<float> mags2,
-                 std::vector<float> freq_axis,
+    // BW and center crequency estimation
+    float rms_cf(const std::vector<float> &mags2,
+                 const std::vector<float> &freq_axis,
+                 float center_frequency,
+                 float sample_rate);
+    float half_power_cf(const std::vector<float> &mags2);
+    float rms_bw(const std::vector<float> &mags2,
+                 const std::vector<float> &freq_axis,
                  float center_frequency);
-    float middle_out(std::vector<float> mags2,
-                     std::vector<float> freq_axis,
+    float middle_out(const std::vector<float> &mags2,
+                     float bin_resolution,
                      float noise_floor,
                      float &bandwidth);
-    float estimate_pwr(std::vector<float> mags2,
-                       std::vector<float> freq_axis,
-                       float center_frequency,
-                       float bandwidth);
+
+    // other utilities
+   float estimate_pwr(const std::vector<float> &mags2,
+                      const std::vector<float> &freq_axis,
+                      float center_frequency,
+                      float bandwidth);
 
 public:
     /**

@@ -24,6 +24,7 @@ import numpy
 import json
 import pmt
 from gnuradio import gr
+from os.path import splitext
 
 class sigmf_meta_writer(gr.basic_block):
     """
@@ -36,6 +37,10 @@ class sigmf_meta_writer(gr.basic_block):
             out_sig=None)
 
         self.d_filename = filename
+        if filename.endswith('.sigmf-data'):
+            pre, ext = splitext(filename)
+            self.d_filename = pre + '.sigmf-meta'
+            gr.log.warn("SigMF metadata filename ends with `sigmf-data`! Saving you from yourself and using " + self.d_filename)
         self.soo = 256
         self.bw_min = rate/1000.0
 
