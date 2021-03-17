@@ -134,33 +134,24 @@ fft_burst_tagger_impl::fft_burst_tagger_impl(float center_freq,
     set_history(d_work_history_nffts * d_fft_size + 1);
     d_work_sample_offset = d_work_history_nffts * d_fft_size;
 
-    // setup the FFT windows including compensation for the FFT size and window gain
+    // setup the normalized FFT windows and pre-compensate for the FFT size
+    // TODO: these may not be the best window to use for this application...
     d_window_f = (float*)volk_malloc(sizeof(float) * d_fft_size, volk_get_alignment());
-    std::vector<float> window =
+    std::vector<float> win =
         fft::window::build(fft::window::WIN_BLACKMAN, d_fft_size, 0);
-    memcpy(d_window_f, &window[0], sizeof(float) * d_fft_size);
-    double g = 0;
-    for (auto& n : window)
-        g += n * n;
-    // scale the window to compensate for FFT size and window rms gain:
-    //   gain_rms^2 * fftsize = sqrt(win_gain / fftsize)^2 * fftsize = win_gain
+    double pwr_acc = 0.0;
+    for (auto x: win) pwr_acc += x*x/d_fft_size;
     for (auto ii=0; ii < d_fft_size; ii++) {
-        d_window_f[ii] /= g*2;      // WHY: magic number so power/noise are correct
+        d_window_f[ii] = win[ii] / (std::sqrt(pwr_acc) * d_fft_size);
     }
-
-    // TODO: this may not be the best window to use for the application
     d_fine_window_f =
         (float*)volk_malloc(sizeof(float) * d_fine_fft_size, volk_get_alignment());
-    std::vector<float> fine_window =
+    std::vector<float> fwin =
         fft::window::build(fft::window::WIN_BLACKMAN, d_fine_fft_size, 0);
-    memcpy(d_fine_window_f, &fine_window[0], sizeof(float) * d_fine_fft_size);
-    g = 0;
-    for (auto& n : fine_window)
-        g += n * n;
-    // scale the window to compensate for FFT size and window rms gain:
-    //   gain_rms^2 * fftsize = sqrt(win_gain / fftsize)^2 * fftsize = win_gain
+    pwr_acc = 0.0;
+    for (auto x: fwin) pwr_acc += x*x/d_fine_fft_size;
     for (auto ii=0; ii < d_fine_fft_size; ii++) {
-        d_fine_window_f[ii] /= g*2;  // WHY: magic number so power/noise are correct
+        d_fine_window_f[ii] = fwin[ii] / (std::sqrt(pwr_acc) * d_fine_fft_size);
     }
 
     d_baseline_sum_f =

@@ -20,8 +20,8 @@ parameters:
     label: Annotation Label
     dtype: string
     default: use_burst_id
-    options: ['use_burst_id']
-    option_labels: [Use Burst ID]
+    options: ['use_burst_id', 'use_snr_db']
+    option_labels: [Use Burst ID, Use SNR]
 -   id: dtype
     label: SigMF Data Type
     dtype: string

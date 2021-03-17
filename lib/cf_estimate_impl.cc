@@ -87,31 +87,27 @@ void cf_estimate_impl::fft_setup(int power)
          */
         bool USE_GAUSSIAN_WINDOW(true);
 
+        std::vector<float> win;
         d_windows.push_back(
             (float*)volk_malloc(sizeof(float) * fftsize, volk_get_alignment()));
 
-        double g = 0;
         // this gaussian window is narrow to create a well localized spectral peak
         if (USE_GAUSSIAN_WINDOW) {
-            float two_sigma_squared = fftsize * 1.0 / 32.0; // former d_guass_sigma = 7/8
-            two_sigma_squared *= 2 * two_sigma_squared;
+            float sigma = fftsize * 1.0 / 32.0;   // former sigma = 7/8
+            float two_sigma_squared = 2 * sigma * sigma;
+            win.resize(fftsize);
             for (int j = 0; j < fftsize; j++) {
                 float x = (-fftsize + 1) / 2.0f + j;
-                d_windows[i][j] = std::exp((-x * x) / two_sigma_squared);
-                g += (d_windows[i][j] * d_windows[i][j]);
+                win[j] = std::exp((-x * x) / two_sigma_squared);
             }
         } else {
-            std::vector<float> window =
-                fft::window::build(fft::window::WIN_BLACKMAN, fftsize, 0);
-            for (auto j = 0; j < fftsize; j++) {
-                d_windows[i][j] = window[j];
-                g += (d_windows[i][j] * d_windows[i][j]);
-            }
+            win = fft::window::build(fft::window::WIN_BLACKMAN, fftsize, 0);
         }
         // scale the window to compensate for FFT size and window rms gain:
-        //   gain_rms^2 * fftsize = sqrt(win_gain / fftsize)^2 * fftsize = win_gain
-        for (auto j = 0; j < fftsize; j++) {
-            d_windows[i][j] /= g*4;     // FIXME: magic number so power/noise are correct
+        double pwr_acc = 0.0;
+        for (auto x: win) pwr_acc += x*x/fftsize;
+        for (auto j=0; j < fftsize; j++) {
+            d_windows[i][j] = win[j] / (std::sqrt(pwr_acc) * fftsize);
         }
     }
 }

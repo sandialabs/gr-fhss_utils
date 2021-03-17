@@ -7,7 +7,7 @@ category: '[Sandia]/FHSS Utilities'
 parameters:
 -   id: method
     label: Method
-    dtype: int
+    dtype: enum
     default: fhss_utils.RMS
     options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.MIDDLE_OUT, fhss_utils.COERCE]
     option_labels: [RMS, Half-Power, Middle Out, Coerce Only]
@@ -21,6 +21,7 @@ parameters:
     dtype: float
     default: 10.0
     hide: part
+    hide: ${ ('none' if (method == "fhss_utils.MIDDLE_OUT") else 'all') }
 
 inputs:
 -   domain: message

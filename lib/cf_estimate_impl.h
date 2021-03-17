@@ -71,6 +71,7 @@ public:
      *
      * @param method - estimate method #cf_method
      * @param channel_freqs - channel freq list for coerce method
+     * @param snr_min - Expected minimum SNR (only used by middle out method).
      */
     cf_estimate_impl(int method, std::vector<float> channel_freqs, float snr_min);
 

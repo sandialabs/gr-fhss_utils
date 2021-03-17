@@ -28,5 +28,13 @@ Internally this block processes data one FFT at a time. It maintains a dynamic n
 
 ---
 
+### Middle Out Frequency and Bandwidth Estimation
+
+The center frequency estimation block contains an otherwise undocumented method for burst frequency boundary detection that is useful for accurate center frequency and bandwidth estimation of high fidelity signals. The noise floor estimate from the FFT burst tagger and user specified minimum signal to noise ratio is used to determine the threshold (halfway between these values) for burst edges, coupled with the narrow Gaussian window used by this block results in good definition many signal types. This method is depicted below:
+
+![middle_out](docs/figures/middle_out.png "Middle Out Bandwidth Estimation")
+
+---
+
 
 An overview of the Sandia National Laboratories Utilities GR Modules can be found in the README for https://github.com/sandialabs/gr-pdu_utils

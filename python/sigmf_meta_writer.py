@@ -80,7 +80,12 @@ class sigmf_meta_writer(gr.basic_block):
         burst = self.label
         if self.label == 'use_burst_id':
             try:
-              burst = 'burst'+str(pmt.to_uint64(pmt.dict_ref(meta, pmt.intern('burst_id'), pmt.PMT_NIL)))
+              burst = 'burst' + str(pmt.to_uint64(pmt.dict_ref(meta, pmt.intern('burst_id'), pmt.PMT_NIL)))
+            except:
+              burst = ''
+        elif self.label == 'use_snr_db':
+            try:
+              burst = str(round(pmt.to_double(pmt.dict_ref(meta, pmt.intern('snr_db'), pmt.PMT_NIL)),1)) + 'dB'
             except:
               burst = ''
 
