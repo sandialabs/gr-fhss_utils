@@ -661,6 +661,13 @@ void fft_burst_tagger_impl::create_new_bursts(const gr_complex* input, int fft)
 
             // normalize the magnitude
             new_b.magnitude = 10 * log10(max_relative_magnitude * d_history_size);
+            double noise = 0;
+            for (int i = new_b.start_bin; i <= new_b.stop_bin; i++) {
+                noise += d_baseline_sum_f[i];
+            }
+            // normalize by total number of bins that form the sum
+            new_b.noise = noise / (new_b.stop_bin - new_b.start_bin + 1);
+
             // Allow for us to filter out the data if needed
             if (d_filter_bandwidth > 0 && new_b.bandwidth > d_filter_bandwidth) {
                 // keep tracking the burst but don't write out the tags so we don't
@@ -853,22 +860,12 @@ void fft_burst_tagger_impl::tag_new_bursts(void)
 
         /* NOISE FLOOR ESTIMATION
          *
-         * There are a number of scaling factors; the d_baseline_sum vector contains a sum
-         * of d_history_size FFT values, but these have not been corrected for the FFT
-         * size or window gain so we do that here. Additionally, we are now reporting the
-         * noise as a density in dBFS/Hz so this needs to be normalized by the bandwidth
-         * per bin. This is done using precomputed dB values for the bin width in dB and
-         * the fft gain in dB.
+         * The burst `noise` field contains a sum of d_history_size FFT values averaged
+         * across the number of bins the burst exists in. We are now reporting the noise
+         * as a density in dBFS/Hz so this needs to be normalized by the bandwidth per
+         * bin. This is done using precomputed dB values for the bin width in dB.
          */
-        double noise_density = 0;
-        for (int i = b.start_bin; i <= b.stop_bin; i++) {
-            noise_density += d_baseline_sum_f[i];
-        }
-
-        // normalize by total number of bins that form the sum
-        noise_density /= (b.stop_bin - b.start_bin + 1);
-        noise_density = 10 * log10(noise_density) - d_bin_width_db;
-        // noise density estimation complete
+        double noise_density = 10 * log10(b.noise) - d_bin_width_db;
 
         pmt::pmt_t value = pmt::make_dict();
         value = pmt::dict_add(value, PMTCONSTSTR__burst_id(), pmt::from_uint64(b.id));

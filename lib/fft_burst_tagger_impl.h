@@ -151,6 +151,7 @@ struct burst {
     float magnitude;
     float bandwidth;
     float center_freq;
+    float noise;
     bool valid;
 };
 
