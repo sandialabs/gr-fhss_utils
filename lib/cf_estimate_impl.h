@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  * Copyright 2021 Jacob Gilbert
@@ -43,27 +43,35 @@ private:
 
     // frequency list coercion
     std::vector<float> d_channel_freqs;
-    float coerce_frequency(float center_frequency, float sample_rate);
+    bool coerce_frequency(float center_frequency, float sample_rate, float &shift);
 
     // BW and center crequency estimation
-    float rms_cf(const std::vector<float> &mags2,
+    bool rms_cf(const std::vector<float> &mags2,
                  const std::vector<float> &freq_axis,
                  float center_frequency,
-                 float sample_rate);
-    float half_power_cf(const std::vector<float> &mags2);
-    float rms_bw(const std::vector<float> &mags2,
+                 float sample_rate,
+                 float &shift);
+
+    bool half_power_cf(const std::vector<float> &mags2, float &shift);
+
+    bool rms_bw(const std::vector<float> &mags2,
                  const std::vector<float> &freq_axis,
-                 float center_frequency);
-    float middle_out(const std::vector<float> &mags2,
+                 float center_frequency,
+                 float &bandwidth);
+
+    bool middle_out(const std::vector<float> &mags2,
                      float bin_resolution,
                      float noise_floor,
-                     float &bandwidth);
+                     float &bandwidth,
+                     float &shift);
 
     // other utilities
-   float estimate_pwr(const std::vector<float> &mags2,
+    bool estimate_pwr(const std::vector<float> &mags2,
                       const std::vector<float> &freq_axis,
                       float center_frequency,
-                      float bandwidth);
+                      float bandwidth,
+                      float &power);
+
 
 public:
     /**

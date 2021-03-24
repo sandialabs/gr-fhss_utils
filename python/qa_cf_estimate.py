@@ -66,6 +66,47 @@ class qa_cf_estimate (gr_unittest.TestCase):
     def tearDown (self):
         self.tb = None
 
+    def test_input_sanitization (self):
+        samp_rate = 1e6
+        freq_offset = -400e3
+        center_freq = 911e6
+
+        # blocks
+        self.emitter = pdu_utils.message_emitter()
+        self.cf = fhss_utils.cf_estimate(fhss_utils.COERCE, [x*1e6 for x in range(900,930)])
+        self.debug = blocks.message_debug()
+
+        # connections
+        self.tb.msg_connect((self.emitter, 'msg'), (self.cf, 'in'))
+        self.tb.msg_connect((self.cf, 'out'), (self.debug, 'store'))
+
+        # data
+        in_data = (1+0j,) * 2048
+        i_vec = pmt.init_c32vector(len(in_data), in_data)
+
+        meta = pmt.make_dict()
+        meta = pmt.dict_add(meta, pmt.intern("sample_rate"), pmt.from_float(samp_rate))
+        meta = pmt.dict_add(meta, pmt.intern("center_freq"), pmt.from_float(center_freq+freq_offset))
+        in_pdu = pmt.cons(meta, i_vec)
+
+        # flowgraph
+        self.tb.start()
+        time.sleep(.001)
+        self.emitter.emit(pmt.PMT_T)
+        time.sleep(.01)
+        self.emitter.emit(pmt.cons(pmt.PMT_T, pmt.PMT_NIL))
+        time.sleep(.01)
+        self.emitter.emit(meta)
+        time.sleep(.01)
+        self.emitter.emit(i_vec)
+        time.sleep(.01)
+        self.emitter.emit(in_pdu)
+        time.sleep(.01)
+        self.tb.stop()
+        self.tb.wait()
+
+        self.assertEqual(0, self.debug.num_messages())
+
     def test_coerce (self):
         samp_rate = 1e6
         freq_offset = -400e3
