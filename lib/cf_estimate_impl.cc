@@ -27,21 +27,22 @@ const int MIN_BURST_SIZE = pow(2, MIN_FFT_POWER) * MIN_NFFTS;
 // PDUs should be large enough to take MIN_NFFTS of size pow(2,MIN_FFT_POWER)
 
 
-cf_estimate::sptr cf_estimate::make(int method, std::vector<float> channel_freqs, float snr_min)
+cf_estimate::sptr cf_estimate::make(int method, std::vector<float> channel_freqs)
 {
-    return gnuradio::get_initial_sptr(new cf_estimate_impl(method, channel_freqs, snr_min));
+    return gnuradio::get_initial_sptr(new cf_estimate_impl(method, channel_freqs));
 }
 
 /*
  * The private constructor
  */
-cf_estimate_impl::cf_estimate_impl(int method, std::vector<float> channel_freqs, float snr_min)
+cf_estimate_impl::cf_estimate_impl(int method, std::vector<float> channel_freqs)
     : gr::block("cf_estimate",
                 gr::io_signature::make(0, 0, 0),
                 gr::io_signature::make(0, 0, 0)),
       d_method(method),
       d_channel_freqs(channel_freqs),
-      d_snr_min(snr_min)
+      d_snr_min(10.0),
+      d_thresh_min(-25.0)
 {
     message_port_register_in(PMTCONSTSTR__in());
     message_port_register_out(PMTCONSTSTR__out());
@@ -244,7 +245,7 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
         freq_axis.push_back(start + bin_size * i);
     }
 
-        // generate the debug message TODO: make conditional
+    // generate the debug message TODO: make conditional
     d_bug.clear();
     d_bug.reserve(fftsize);
     for (auto ii = 0; ii < fftsize; ii++)
@@ -433,9 +434,12 @@ bool cf_estimate_impl::middle_out(const std::vector<float> &mags2,
     int peak_idx = std::distance(std::begin(mags2), peak);
 
     // determine the bandwidth threshold; linear-scale mag^2
-    float threshold = (10 * log10(*peak) - d_snr_min + noise_floor_db) / 2.0;
+    float peak_db = 10 * log10(*peak);
+    float threshold = (peak_db - d_snr_min + noise_floor_db) / 2.0;
     if (threshold < noise_floor_db) {
-      threshold = noise_floor_db;
+        threshold = noise_floor_db;
+    } else if (threshold < (peak_db + d_thresh_min)) {
+        threshold = peak_db + d_thresh_min;
     }
 
     bool meas_err(threshold <= noise_floor_db);
@@ -513,16 +517,6 @@ bool cf_estimate_impl::estimate_pwr(const std::vector<float> &mags2,
     power = 10 * log10(signal_power);
     return false;
 } /* end estimate_pwr */
-
-//////////////////////////////////////////////
-// getters/setters
-//////////////////////////////////////////////
-void cf_estimate_impl::set_freqs(std::vector<float> channel_freqs)
-{
-    d_channel_freqs = channel_freqs;
-}
-
-void cf_estimate_impl::set_method(int method) { d_method = method; }
 
 } /* namespace fhss_utils */
 } /* namespace gr */

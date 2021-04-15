@@ -52,11 +52,9 @@ public:
      *
      * \param method Center Frequency Estimation method #cf_method
      * \param channel_freqs Channel frequencies to set for coerce method.
-     * \param snr_min Expected minimum SNR (only used by middle out method).
      */
     static sptr make(int method = 0,
-                     std::vector<float> channel_freqs = std::vector<float>(),
-                     float snr_min = 10);
+                     std::vector<float> channel_freqs = std::vector<float>());
 
     /*!
      * \brief Set channel center frequencies
@@ -77,6 +75,19 @@ public:
      * \param method Method enum to select
      */
     virtual void set_method(int method) = 0;
+
+    /*!
+     * \brief Set the expected minimum SNR (only used by middle out method).
+     *
+     * \param snr Expected minimum SNR.
+     */
+    virtual void set_snr_min(float snr) = 0;
+    /*!
+     * \brief Set the minimum threshold to use (only used by middle out method).
+     *
+     * \param thresh Minimum threshold to use relative to the peak.
+     */
+    virtual void set_thresh_min(float thresh) = 0;
 };
 
 

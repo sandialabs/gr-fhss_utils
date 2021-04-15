@@ -20,8 +20,12 @@ parameters:
     label: Minimum SNR
     dtype: float
     default: 10.0
-    hide: part
     hide: ${ ('none' if (method == "fhss_utils.MIDDLE_OUT") else 'all') }
+-   id: thresh_min
+    label: Min Threshold Rel. Peak
+    dtype: float
+    default: -25.0
+    hide: ${ ('part' if (method == "fhss_utils.MIDDLE_OUT") else 'all') }
 
 inputs:
 -   domain: message
@@ -38,9 +42,16 @@ outputs:
 
 templates:
     imports: import fhss_utils
-    make: fhss_utils.cf_estimate(${method}, ${channel_freqs}, ${snr_min})
+    make: |-
+        fhss_utils.cf_estimate(${method}, ${channel_freqs})
+        % if method == "fhss_utils.MIDDLE_OUT":
+        self.${id}.set_snr_min(${snr_min})
+        self.${id}.set_thresh_min(${thresh_min})
+        % endif
     callbacks:
     - set_freqs(${channel_freqs})
     - set_method(${method})
+    - set_snr_min(${snr_min})
+    - set_thresh_min(${thresh_min})
 
 file_format: 1
