@@ -437,8 +437,10 @@ void fft_burst_tagger_impl::create_new_potential_bursts(void)
                     }
                 }
 
-                // The burst might have started one FFT earlier
-                b.start = d_abs_fft_index - d_burst_pre_len - d_rel_mag_hist;
+                // The burst might have started a few FFTs earlier so offset by d_rel_mag_hist
+                long fftidx = d_abs_fft_index - d_burst_pre_len - d_rel_mag_hist;
+                // when using noise floor preload, the burst start should not be negative
+                b.start = std::max(fftidx, 0L);
                 b.id = d_pre_burst_id++;
                 b.thresh_count = 1 + d_rel_mag_hist;
 
@@ -929,6 +931,22 @@ void fft_burst_tagger_impl::publish_debug()
 
 uint64_t fft_burst_tagger_impl::get_n_tagged_bursts() { return d_n_tagged_bursts; }
 
+void fft_burst_tagger_impl::preload_noise_floor(double noise_density, bool preload)
+{
+    // the preload boolean allows this function to be called but also bypassed (GRC thing...)
+    if (preload) {
+        GR_LOG_INFO(d_logger, boost::format("initializing noise denisty to %.2f dB") % noise_density);
+        double noise_density_linear = pow(10, noise_density / 10.0);
+        for (auto i = 0; i < d_fft_size; i++) {
+            for (auto j = 0; j < d_history_size; j++) {
+                d_bin_averages[i].add(noise_density_linear);
+            }
+        }
+        d_history_primed = true;
+    } else {
+        GR_LOG_INFO(d_logger, "preload called but bypassed, running normally");
+    }
+}
 
 int fft_burst_tagger_impl::general_work(int noutput_items,
                                         gr_vector_int& ninput_items,

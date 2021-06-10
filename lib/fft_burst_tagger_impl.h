@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  * Copyright 2021 Jacob Gilbert
@@ -89,7 +89,7 @@ public:
      * @param p - value to add
      * @return float - current accumulator value
      */
-    float add(float p)
+    float add(double p)
     {
         sum += pp - hist[current_index];
         hist[current_index++] = pp;
@@ -114,11 +114,11 @@ public:
     }
 
 private:
-    std::vector<float> hist;
+    std::vector<double> hist;
     size_t current_index;
     size_t N;
-    float sum;
-    float pp;   // delay noise floor sum by one FFT
+    double sum;
+    double pp;   // delay noise floor sum by one FFT
 }; // end class moving_average
 
 /*
@@ -399,6 +399,8 @@ public:
      * @param bw - bandwidth
      */
     void set_max_burst_bandwidth(double bw) { d_filter_bandwidth = bw; }
+
+    void preload_noise_floor(double noise_density, bool preload) override;
 };
 
 } // namespace fhss_utils

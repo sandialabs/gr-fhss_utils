@@ -148,7 +148,8 @@ tagged_burst_to_pdu_impl::~tagged_burst_to_pdu_impl()
 
 bool tagged_burst_to_pdu_impl::stop()
 {
-    GR_LOG_INFO(d_logger, boost::format("Saw %lu bursts") % d_max_id)
+    GR_LOG_INFO(d_logger, boost::format("Stopped with %d bursts remaining in queue") % d_bursts.size());
+    GR_LOG_INFO(d_logger, boost::format("Emitted %lu bursts") % d_max_id);
     buffer* end_buffer = new buffer(0);
     end_buffer->end_flag = true;
     d_work_queue.bounded_push(end_buffer);

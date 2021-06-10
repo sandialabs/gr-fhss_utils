@@ -94,11 +94,18 @@ public:
 
     /**
      * Sets max burst bandwidth
-     * Unit: Hz
      *
-     * @param bw - bandwidth
+     * @param bw - bandwidth in Hz
      */
     virtual void set_max_burst_bandwidth(double bw) = 0;
+
+    /**
+     * Preloads the noise floor estimate with a uniform value so that bursts can be detected immediately
+     *
+     * @param noise_density - noise density to preload
+     * @param preload - must be set to true to take effect
+     */
+    virtual void preload_noise_floor(double noise_density, bool preload = false) = 0;
 }; // end class fft_burst_tagger
 
 

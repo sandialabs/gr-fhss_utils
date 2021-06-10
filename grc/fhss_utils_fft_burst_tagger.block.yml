@@ -68,6 +68,12 @@ parameters:
     dtype: int
     default: '64'
     hide: part
+# "ADVANCED" tab:
+-   id: preload_nf
+    label: Noise Floor Preload (dB)
+    category: Advanced
+    dtype: float
+    hide: part
 
 inputs:
 -   domain: stream
@@ -82,8 +88,10 @@ outputs:
 
 templates:
     imports: import fhss_utils
-    make: fhss_utils.fft_burst_tagger(${center_frequency}, ${fft_size}, ${sample_rate},
-        ${burst_pre_len}, ${burst_post_len}, ${burst_width}, ${max_bursts}, ${max_burst_len},
-        ${threshold}, ${history_size}, ${lookahead}, ${debug})
+    make: |-
+        fhss_utils.fft_burst_tagger(${center_frequency}, ${fft_size}, ${sample_rate}, ${burst_pre_len}, ${burst_post_len}, ${burst_width}, ${max_bursts}, ${max_burst_len}, ${threshold}, ${history_size}, ${lookahead}, ${debug})
+        % if preload_nf:
+        self.${id}.preload_noise_floor(${preload_nf}, bool(${preload_nf}))
+        % endif
 
 file_format: 1
