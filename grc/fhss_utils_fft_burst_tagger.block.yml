@@ -22,7 +22,7 @@ parameters:
     dtype: float
     default: '7'
 -   id: debug
-    label: Debug Output
+    label: Save Debug
     dtype: bool
     default: 'False'
 # "BURST CONFIG" tab:

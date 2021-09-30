@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  *
@@ -121,6 +121,11 @@ const pmt::pmt_t PMTCONSTSTR__start_offset()
 const pmt::pmt_t PMTCONSTSTR__end_offset()
 {
     static const pmt::pmt_t val = pmt::mp("end_offset");
+    return val;
+}
+const pmt::pmt_t PMTCONSTSTR__input_rate()
+{
+    static const pmt::pmt_t val = pmt::mp("input_rate");
     return val;
 }
 const pmt::pmt_t PMTCONSTSTR__cut_short()

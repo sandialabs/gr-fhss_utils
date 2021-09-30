@@ -92,6 +92,7 @@ fft_burst_tagger_impl::fft_burst_tagger_impl(float center_freq,
       d_history_index(0),
       d_burst_post_len(burst_post_len),
       d_debug(debug),
+      d_pub_debug(false),
       d_burst_debug_file(NULL),
       d_mask_owners(d_fft_size)
 
@@ -248,6 +249,21 @@ fft_burst_tagger_impl::~fft_burst_tagger_impl()
     MKL_LONG status = DftiFreeDescriptor(&m_fft);
     status = DftiFreeDescriptor(&m_fine_fft);
 #endif
+}
+
+bool fft_burst_tagger_impl::start()
+{
+    GR_LOG_INFO(d_logger, boost::format("total time: %f") % d_total_timer.elapsed());
+
+    // check if there are any blocks subscribed to the `debug` port - if not, disable output
+    if(pmt::is_pair(pmt::dict_ref(d_message_subscribers, PMTCONSTSTR__debug(), pmt::PMT_NIL))) {
+        GR_LOG_INFO(d_logger, "Debug Message Port is connected - Enabling Output");
+        d_pub_debug = true;
+    } else {
+        GR_LOG_INFO(d_logger, "Debug Message Port is not connected - Disabling Output");
+        d_pub_debug = false;
+    }
+    return true;
 }
 
 bool fft_burst_tagger_impl::stop()
@@ -916,13 +932,16 @@ void fft_burst_tagger_impl::tag_gone_bursts(int noutput_items)
 
 void fft_burst_tagger_impl::publish_debug()
 {
+    if(!d_pub_debug) {
+        return;
+    }
+
     std::vector<gr_complex> dbg(d_fft_size);
     // generate output vector, real value is the current FFT, imaginary is the threshold
     // which allows this to be plotted on the time sink
     for (auto jj = 0; jj < d_fft_size; jj++) {
         dbg[jj] = 10 * log10(d_magnitude_shifted_f[jj]) +
                   1j * 10 * log10(1e-30 + 1.0 * d_baseline_sum_f[0 + jj]);
-//                  1j * 10 * log10(1e-30 + d_threshold * d_baseline_sum_f[0 + jj]);
     }
 
     message_port_pub(PMTCONSTSTR__debug(),
@@ -1062,8 +1081,11 @@ int fft_burst_tagger_impl::general_work(int noutput_items,
         update_circular_buffer();
         d_update_cb_timer.end();
 
-        // uncomment this to see every single FFT and corresponding noise average
-        // publish_debug(); usleep(5000);
+        /* uncomment this to see every single FFT and corresponding noise average; this
+         * will make online processing effectively unusable but can be very helpful to
+         * debug internal behavior when operating from file.
+         */
+        // if (d_debug) { publish_debug(); usleep(25000); }
 
         d_abs_fft_index++;
     }
@@ -1072,9 +1094,9 @@ int fft_burst_tagger_impl::general_work(int noutput_items,
     d_other.start();
     tag_new_bursts();
     tag_gone_bursts(produced);
-    if (d_debug) {
-        publish_debug();
-    }
+
+    publish_debug();
+
     d_other.end();
     d_total_timer.end();
 

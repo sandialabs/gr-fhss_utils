@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  *
@@ -74,8 +74,8 @@ tagged_burst_to_pdu_impl::tagged_burst_to_pdu_impl(size_t decimation,
       d_blocked(false),
       d_decimation(decimation),
       d_taps(taps),
-      d_write_queue(d_num_buffers+1), // +1 to match the work_queue size
-      d_work_queue(d_num_buffers+1), // +1 so stop() function can add a buffer
+      d_write_queue(d_num_buffers + 1), // +1 to match the work_queue size
+      d_work_queue(d_num_buffers + 1),  // +1 so stop() function can add a buffer
       d_sample_rate(sample_rate),
       d_num_threads(num_threads)
 {
@@ -370,6 +370,8 @@ void tagged_burst_to_pdu_impl::publish_and_remove_old_bursts(const buffer& work_
             burst.len = std::min(burst.len, (size_t)d_max_burst_size);
             burst.dict =
                 pmt::dict_add(burst.dict, PMTCONSTSTR__end_offset(), pmt::from_uint64(tag.offset));
+            burst.dict = pmt::dict_add(
+                burst.dict, PMTCONSTSTR__input_rate(), pmt::from_float(d_sample_rate));
             if (burst.len >= d_min_burst_size) {
                 if (id == 1) {
                     GR_LOG_INFO(d_logger,
@@ -397,6 +399,8 @@ void tagged_burst_to_pdu_impl::publish_and_remove_old_bursts(const buffer& work_
                 (d_max_burst_size * d_decimation);
             burst.dict = pmt::dict_add(
                 burst.dict, PMTCONSTSTR__end_offset(), pmt::from_uint64(end_offset));
+            burst.dict = pmt::dict_add(
+                burst.dict, PMTCONSTSTR__input_rate(), pmt::from_float(d_sample_rate));
             burst.dict = pmt::dict_add(burst.dict, PMTCONSTSTR__cut_short(), pmt::PMT_T);
             if (d_debug) {
                 GR_LOG_INFO(d_logger,
@@ -492,6 +496,8 @@ void tagged_burst_to_pdu_impl::process_data()
                     burst.len += c_size;
                     burst.data_skip = 0;
                 }
+//  END OMP PARALLEL FOR LOOP
+
             }
             // publish messages for any finished bursts
             publish_and_remove_old_bursts(*work_buffer);
