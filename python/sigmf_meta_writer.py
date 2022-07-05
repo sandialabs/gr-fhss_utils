@@ -25,7 +25,7 @@ import json
 import pmt
 from gnuradio import gr
 from os.path import splitext
-from math import isnan
+from math import isnan, isinf
 
 class sigmf_meta_writer(gr.basic_block):
     """
@@ -148,7 +148,7 @@ class sigmf_meta_writer(gr.basic_block):
 
       # append the annotation
       try:
-        if isnan(snr):
+        if isnan(snr) or isinf(snr):
           print("Got illegal SNR value in",meta)
           self.d_dict['annotations'].append({'core:sample_start': sob-self.soo,
                       'core:sample_count': eob-sob, 'core:freq_upper_edge': int(freq+bw/2),
