@@ -1,8 +1,9 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
+ * Copyright 2021 Jacob Gilbert
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -12,8 +13,8 @@
 
 #include <gnuradio/blocks/rotator.h>
 #include <gnuradio/fft/fft.h>
-#include <fhss_utils/cf_estimate.h>
-#include <fhss_utils/constants.h>
+#include <gnuradio/fhss_utils/cf_estimate.h>
+#include <gnuradio/fhss_utils/constants.h>
 
 namespace gr {
 namespace fhss_utils {
@@ -26,68 +27,129 @@ private:
 
     // this block supports a few different estimation methods
     int d_method;
+    float d_snr_min;
+    float d_thresh_min;
+    std::vector<gr_complex> d_bug;
 
     // fft tools
     void fft_setup(int power);
     void fft_cleanup();
-    std::vector<gr::fft::fft_complex*> d_ffts;
+    std::vector<gr::fft::fft_complex_fwd*> d_ffts;
     std::vector<float*> d_windows;
-    std::vector<float> d_fft_mag2_gains;
-    float* d_mags2;
     float* d_magnitude_shifted_f;
 
     // correction tools
     blocks::rotator d_rotate;
     std::vector<gr_complex> d_corrected_burst;
 
-    // coerce tools
-    std::vector<float> d_channel_freqs;
-    float coerce_frequency(float center_frequency, float sample_rate);
-    float rms(std::vector<float> mags2,
-              std::vector<float> freq_axis,
-              float center_frequency,
-              float sample_rate);
-    float half_power(std::vector<float> mags2);
+    /**
+     * \brief Coerce estimated center frequency to the closest Channel Freq list entry
+     *
+     * \param center_frequency Center frequency of input PDU data
+     * \param sample_rate Sample Rate of PDU data
+     * \param shift Reference to center frequency shift factor (output)
+     *
+     * returns a bool indicating if the burst SNR was below configured minimum
+     */
+     bool coerce_frequency(float center_frequency, float sample_rate, float &shift);
+     std::vector<float> d_channel_freqs;
 
-    // BW and SNR estimation
-    float rms_bw(std::vector<float> mags2,
-                 std::vector<float> freq_axis,
-                 float center_frequency);
-    float estimate_pwr(std::vector<float> mags2,
-                       std::vector<float> freq_axis,
-                       float center_frequency,
-                       float bandwidth,
-                       float fft_mag2_gain);
+    /**
+     * \brief Return center frequency estimate using the RMS method
+     *
+     * \param mags2 Vector of magnitude^2 FFT of input PDU data
+     * \param freq_axis Frequency of each bin in the mags2 vector
+     * \param center_frequency Center Frequency of input data
+     * \param sample_rate Sample Rate of input data
+     * \param shift Reference to center frequency shift factor (output)
+     * \param start_bin Lowest frequency bin to examine (Hz)
+     *
+     * returns a bool indicating if the burst SNR was below configured minimum
+     */
+    bool rms_cf(const std::vector<float> &mags2,
+                 const std::vector<float> &freq_axis,
+                 float center_frequency,
+                 float sample_rate,
+                 float &shift,
+                 size_t start_bin);
+
+    /*!
+     * \brief Return center frequency estimate using the Half Power method
+     *
+     * \param mags2 Vector of magnitude^2 FFT of input PDU data
+     * \param shift Reference to center frequency shift factor (output)
+     * \param start_bin Lowest frequency bin to examine (Hz)
+     *
+     * returns a bool indicating if the burst SNR was below configured minimum
+     */
+    bool half_power_cf(const std::vector<float> &mags2, float &shift, size_t start_bin);
+
+    /*!
+     * \brief Return bandwidth estimate using the RMS method
+     *
+     * \param mags2 Vector of magnitude^2 FFT of input PDU data
+     * \param freq_axis Frequency of each bin in the mags2 vector
+     * \param center_frequency Center Frequency of input PDU data
+     * \param bandwidth Reference to bandwidth estimate (output)
+     * \param start_bin Lowest frequency bin to examine (Hz)
+     *
+     * returns a bool indicating if the burst SNR was below configured minimum
+     */
+    bool rms_bw(const std::vector<float> &mags2,
+                 const std::vector<float> &freq_axis,
+                 float center_frequency,
+                 float &bandwidth,
+                 size_t start_bin);
+
+    /*!
+     * \brief Estimate bandwidth and center frequency using the Middle Out method
+     *
+     * \param mags2 Vector of magnitude^2 FFT of input PDU data
+     * \param bin_resolution Span of each FFT bin for scaling bandwidth estimate
+     * \param noise_floor Estimate of the noise floor in dB
+     * \param bandwidth Reference to bandwidth estimate (output)
+     * \param shift Reference to center frequency shift factor (output)
+     * \param start_bin Lowest frequency bin to examine (Hz)
+     *
+     * returns a boool indicating if the burst SNR was below configured minimum
+     */
+    bool middle_out(const std::vector<float> &mags2,
+                     float bin_resolution,
+                     float noise_floor,
+                     float &bandwidth,
+                     float &shift,
+                     size_t start_bin);
+
+    /*!
+     * \brief Return estimated power in a burst
+     *
+     * \param mags2 Vector of magnitude^2 FFT of input PDU data
+     * \param freq_axis Frequency of each bin in the mags2 vector
+     * \param center_frequency Center Frequency of input PDU data
+     * \param bandwidth Bandwidth of signal
+     * \param power Reference to the power of the signal (output)
+     *
+     * returns a boool indicating if the burst SNR was below configured minimum
+     */
+   bool estimate_pwr(const std::vector<float> &mags2,
+                      const std::vector<float> &freq_axis,
+                      float center_frequency,
+                      float bandwidth,
+                      float &power);
+
 
 public:
-    /**
-     * Constructor
-     *
-     * @param method - estimate method #cf_method
-     * @param channel_freqs - channel freq list for coerce method
-     */
     cf_estimate_impl(int method, std::vector<float> channel_freqs);
 
-    /**
-     * Deconstructor
-     */
-    ~cf_estimate_impl();
+    ~cf_estimate_impl() override;
 
-    // getters and setters
-
-    /**
-     * set coerce channel frequency list
-     *
-     * @param channel_freqs - channel freq list for coerce method
-     */
-    void set_freqs(std::vector<float> channel_freqs);
-
-    /**
-     * Set estimate method
-     *
-     * @param method - estimate method #cf_method
-     */
-    void set_method(int method);
+    void set_freqs(std::vector<float> channel_freqs) override
+    {
+        d_channel_freqs = channel_freqs;
+    };
+    void set_method(int method) override { d_method = method; };
+    void set_snr_min(float snr) override { d_snr_min = snr; };
+    void set_thresh_min(float thresh) override { d_thresh_min = thresh; };
 };
 
 } // namespace fhss_utils

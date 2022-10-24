@@ -57,7 +57,7 @@ outputs:
     optional: true
 
 templates:
-    imports: import fhss_utils
+    imports: from gnuradio import fhss_utils
     make: fhss_utils.s_and_h_detector(${freq_sample_delay_samps}, ${freq_samps_to_avg},
         ${mag_samps_to_avg}, ${thresh})
     callbacks:

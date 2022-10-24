@@ -5,53 +5,83 @@ label: FFT Burst Tagger
 category: '[Sandia]/FHSS Utilities'
 
 parameters:
+# "GENERAL" tab:
 -   id: center_frequency
     label: Center Frequency
     dtype: float
     default: '1626000000'
+-   id: sample_rate
+    label: Sample Rate
+    dtype: int
 -   id: fft_size
     label: FFT Size
     dtype: int
     default: '1024'
--   id: sample_rate
-    label: Sample Rate
-    dtype: int
--   id: max_bursts
-    label: Max Bursts
-    dtype: int
-    default: '0'
--   id: max_burst_len
-    label: Max Burst FFTs
-    dtype: int
-    default: '0'
--   id: burst_pre_len
-    label: Pre Burst FFTs
-    dtype: int
-    default: '5'
--   id: burst_post_len
-    label: Post Burst FFTs
-    dtype: int
-    default: '20'
--   id: burst_width
-    label: Burst Width
-    dtype: int
-    default: '20000'
 -   id: threshold
     label: Threshold
     dtype: float
     default: '7'
--   id: history_size
-    label: History Size
-    dtype: int
-    default: '512'
--   id: lookahead
-    label: Lookahead FFTs
-    dtype: int
-    default: '10'
 -   id: debug
     label: Debug Output
     dtype: bool
     default: 'False'
+# "BURST CONFIG" tab:
+-   id: max_bursts
+    label: Max Simultaneous Bursts
+    category: Burst Config
+    dtype: int
+    default: '0'
+    hide: part
+-   id: max_burst_len
+    label: Max Length (FFTs)
+    category: Burst Config
+    dtype: int
+    default: '0'
+    hide: part
+-   id: burst_pre_len
+    label: Added Pre Burst Length (FFTs)
+    category: Burst Config
+    dtype: int
+    default: '5'
+    hide: part
+-   id: burst_post_len
+    label: Added Post Burst Length (FFTs)
+    category: Burst Config
+    dtype: int
+    default: '20'
+    hide: part
+-   id: lookahead
+    label: Burst Settling Time (FFTs)
+    category: Burst Config
+    dtype: int
+    default: '10'
+    hide: part
+-   id: burst_width
+    label: Burst Width (Hz)
+    category: Burst Config
+    dtype: int
+    default: '500000'
+    hide: part
+-   id: history_size
+    label: Noise History Length (FFTs)
+    category: Burst Config
+    dtype: int
+    default: '64'
+    hide: part
+# "ADVANCED" tab:
+-   id: preload_nf_bool
+    label: Preload Noise Floor?
+    category: Advanced
+    dtype: bool
+    hide: part
+    default: 'False'
+
+-   id: preload_nf
+    label: Noise Floor Preload (dB)
+    category: Advanced
+    dtype: float
+    hide: ${ ('part' if (preload_nf_bool) else 'all') }
+    default: '0'
 
 inputs:
 -   domain: stream
@@ -60,11 +90,16 @@ inputs:
 outputs:
 -   domain: stream
     dtype: complex
+-   domain: message
+    id: debug
+    optional: true
 
 templates:
-    imports: import fhss_utils
-    make: fhss_utils.fft_burst_tagger(${center_frequency}, ${fft_size}, ${sample_rate},
-        ${burst_pre_len}, ${burst_post_len}, ${burst_width}, ${max_bursts}, ${max_burst_len},
-        ${threshold}, ${history_size}, ${lookahead}, ${debug})
+    imports: from gnuradio import fhss_utils
+    make: |-
+        fhss_utils.fft_burst_tagger(${center_frequency}, ${fft_size}, ${sample_rate}, ${burst_pre_len}, ${burst_post_len}, ${burst_width}, ${max_bursts}, ${max_burst_len}, ${threshold}, ${history_size}, ${lookahead}, ${debug})
+        % if preload_nf_bool:
+        self.${id}.preload_noise_floor(${preload_nf}, bool(${preload_nf}))
+        % endif
 
 file_format: 1

@@ -28,7 +28,7 @@ outputs:
     optional: true
 
 templates:
-    imports: import fhss_utils
+    imports: from gnuradio import fhss_utils
     make: fhss_utils.fft_peak(${fft_len})
     callbacks:
     - set_fft_len(${fft_len})

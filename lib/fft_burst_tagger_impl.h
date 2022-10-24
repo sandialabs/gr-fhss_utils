@@ -1,8 +1,9 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
+ * Copyright 2021 Jacob Gilbert
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -11,15 +12,19 @@
 #define INCLUDED_FHSS_UTILS_FFT_BURST_TAGGER_IMPL_H
 
 #include <gnuradio/fft/fft.h>
-#include <fhss_utils/fft_burst_tagger.h>
-#include <fhss_utils/constants.h>
+#include <gnuradio/fhss_utils/fft_burst_tagger.h>
 #include <mutex>
 //#define __USE_MKL__
 #ifdef __USE_MKL__
 #include "mkl_dfti.h"
 #endif
 
-// Used for profiling timer
+/*
+ * DO_TIMER is used for profiling timer
+ *
+ * WARNING: Use of profiling timers has performance implications, they are only complied
+ * if this option is enabled.
+ */
 //#define DO_TIMER
 #include <chrono>
 using namespace std::chrono;
@@ -33,17 +38,11 @@ struct peak {
     float relative_magnitude;
 };
 
-/**
- * timer class blah blah
- */
 class timer
 {
 public:
-    /**
-     * Constructor
-     */
     timer() : total(0) {}
-// The timers can take a lot of extra cycles.  Only compile them in if wanted.
+
 #ifndef DO_TIMER
     void start() {}
     void end() {}
@@ -65,20 +64,22 @@ private:
 }; // end class timer
 
 /**
- * Calculates a moving average utilizing circular buffer
+ * Calculates a moving average utilizing circular buffer, used in this block for the noise
+ * estimate in each bin.
  */
-class movingAverage
+class moving_average
 {
-    // Calculate a moving average of floats using a circular buffer.
 public:
     /**
      * Constructor
      *
-     * @param window - number of samples in buffer
+     * @param size - size in samples of the moving average circular buffer
      */
-    movingAverage(size_t window) : N(window)
+    moving_average(size_t size) : N(size)
     {
-        sum = curIndex = 0;
+        current_index = 0;
+        sum = 0.0;
+        pp = 0.0;
         hist.resize(N);
         memset(&hist[0], 0, sizeof(float) * N);
     }
@@ -89,22 +90,42 @@ public:
      * @param p - value to add
      * @return float - current accumulator value
      */
-    float add(float p)
+    float add(double p)
     {
-        sum += p - hist[curIndex];
-        hist[curIndex++] = p;
-        if (curIndex == N)
-            curIndex = 0;
-        return sum;
+        sum += pp - hist[current_index];
+        hist[current_index++] = pp;
+        pp = p;
+        if (current_index == N)
+            current_index = 0;
+        return sum / N;
+    }
+
+    /**
+     * Print the contents of the a given moving average buffer in a python-friendly
+     * way. This is a debug function only that is not normally used
+     */
+    std::string print(void)
+    {
+        std::stringstream sout;
+        sout << "[" << hist[0];
+        for (auto ii = 1; ii < N; ii++)
+            sout << ", " << hist[ii];
+        sout << "]";
+        return sout.str();
     }
 
 private:
-    std::vector<float> hist;
-    size_t curIndex;
+    std::vector<double> hist;
+    size_t current_index;
     size_t N;
-    float sum;
-}; // end class movingAverage
+    double sum;
+    double pp;   // delay noise floor sum by one FFT
+}; // end class moving_average
 
+/*
+ * A pre burst is energy that has been detected as being above the configured threshold,
+ * but is not yet sustained long enough to be considered a burst.
+ */
 struct pre_burst {
     uint64_t start;
     uint64_t peak_count;
@@ -116,6 +137,10 @@ struct pre_burst {
     float max_relative_magnitude;
 };
 
+/*
+ * A burst is sustained energy above the configured threshold and will result in a tag
+ * being emitted.
+ */
 struct burst {
     uint64_t start;
     uint64_t stop;
@@ -127,6 +152,7 @@ struct burst {
     float magnitude;
     float bandwidth;
     float center_freq;
+    float noise;
     bool valid;
 };
 
@@ -144,22 +170,21 @@ struct owners {
         _size = 0;
     }
 
-    void push_back(uint64_t id)
+    /* return of zero is success, otherwise error */
+    int push_back(uint64_t id)
     {
         if (_size > 3) {
-            printf("Owners::push_back - Trying to add too many points for  bin id=%zu, "
-                   "size=%zu, burst=%zu\n",
-                   uid,
-                   _size,
-                   id);
-            printf("Owner bins are %zu, %zu, %zu %zu\n", ids[0], ids[1], ids[2], ids[3]);
-            return;
+            return 1;
+            // printf("Owners::push_back - Trying to add too many points for  bin id=%zu,
+            // size=%zu, burst=%zu\n", uid, _size, id); printf("Owner bins are %zu, %zu,
+            // %zu %zu\n", ids[0], ids[1], ids[2], ids[3]);
         }
         ids[_size] = id;
         _size++;
+        return 0;
     }
 
-    void update(uint64_t oldID, uint64_t newID)
+    int update(uint64_t oldID, uint64_t newID)
     {
         if (ids[0] == oldID)
             ids[0] = newID;
@@ -169,13 +194,14 @@ struct owners {
             ids[2] = newID;
         else if (ids[3] == oldID)
             ids[3] = newID;
-        else {
-            printf("Owners::Update - Couldn't find id to update. This should never "
-                   "happen\n");
-        }
+        else
+            return 1;
+        // printf("Owners::Update - Couldn't find id to update. This should never
+        // happen\n");
+        return 0;
     }
 
-    void erase(uint64_t id)
+    int erase(uint64_t id)
     {
         _size--;
         if (ids[0] == id) {
@@ -199,13 +225,12 @@ struct owners {
         } else if (ids[3] == id) {
             ids[3] = (uint64_t)-1;
         } else {
-            // Increment size because we didn't remove anything.
-            _size++;
-            printf("Owners::Remove - Couldn't find id to erase. This should never happen "
-                   "- bin id = %zu, burst=%zu\n",
-                   uid,
-                   id);
+            _size++; // Increment size because we didn't remove anything.
+            return 1;
+            // printf("Owners::Remove - Couldn't find id to erase. This should never
+            // happen - bin id = %zu, burst=%zu\n", uid, id);
         }
+        return 0;
     }
 };
 
@@ -217,6 +242,7 @@ class fft_burst_tagger_impl : public fft_burst_tagger
 private:
     bool d_history_primed;
     bool d_debug;
+    bool d_pub_debug;
 
     int d_fft_size;
     int d_fine_fft_size;
@@ -237,9 +263,10 @@ private:
     uint64_t extra;
     uint64_t d_rel_mag_hist;
     uint64_t d_rel_hist_index;
+    uint32_t d_work_history_nffts;
+    uint32_t d_work_sample_offset;
 
     float d_bin_width_db;
-    float d_fft_gain_db;
 
     float* d_window_f;
     float* d_magnitude_shifted_f;
@@ -250,16 +277,17 @@ private:
     float* d_relative_magnitude_f;
     float* d_relative_history_f;
     uint32_t* d_burst_mask_i;
+    uint32_t* d_burst_mask_j;  // 1 FFT buffer to prevent burst energy from impacting noise
     float* d_ones_f;
     float d_threshold;
     float d_threshold_low;
-    float d_center_frequency;
+    float d_center_freq;
     float d_filter_bandwidth;
 
     FILE* d_burst_debug_file;
 
-    gr::fft::fft_complex* d_fft;
-    gr::fft::fft_complex* d_fine_fft;
+    gr::fft::fft_complex_fwd* d_fft;
+    gr::fft::fft_complex_fwd* d_fine_fft;
 #ifdef __USE_MKL__
     DFTI_DESCRIPTOR_HANDLE m_fft;
     DFTI_DESCRIPTOR_HANDLE m_fine_fft;
@@ -270,7 +298,7 @@ private:
     std::list<burst> d_new_bursts;
     std::list<burst> d_gone_bursts;
     std::vector<owners> d_mask_owners;
-    std::vector<movingAverage> d_bin_averages;
+    std::vector<moving_average> d_bin_averages;
 
     bool compute_relative_magnitude(void);
     void update_circular_buffer(void);
@@ -280,7 +308,7 @@ private:
     void update_active_bursts(void);
     void update_potential_bursts(void);
     void delete_gone_bursts(void);
-    void create_new_bursts(const gr_complex* input);
+    void create_new_bursts(const gr_complex* input, int fft);
     void create_new_potential_bursts(void);
     void tag_new_bursts(void);
     void tag_gone_bursts(int noutput_items);
@@ -291,6 +319,7 @@ private:
     void remove_ownership(const burst& b);
 
     bool check_prev_magnitude(size_t bin);
+    void publish_debug(void);
 
     std::mutex d_work_mutex;
 
@@ -310,24 +339,7 @@ private:
     timer d_other;
 
 public:
-    /**
-     * Constructor
-     *
-     * @param center_frequency - center frequency of incoming stream, unit Hz
-     * @param fft_size -
-     * @param sample_rate - sample rate of incoming stream
-     * @param burst_pre_len - XXX unit seconds
-     * @param burst_post_len - XXX unit seconds
-     * @param burst_width -XXX unit Hz
-     * @param max_bursts - XXX
-     * @param max_burst_len - XXX
-     * @param threshold - XXX unit dB
-     * @param history_size - XXX
-     * @param lookahead - XXX unit seconds
-     * @param debug - true enables debug functionality
-     *
-     */
-    fft_burst_tagger_impl(float center_frequency,
+    fft_burst_tagger_impl(float center_freq,
                           int fft_size,
                           int sample_rate,
                           int burst_pre_len,
@@ -340,29 +352,38 @@ public:
                           int lookahead,
                           bool debug);
 
-    /**
-     * Deconstructor
-     */
-    ~fft_burst_tagger_impl();
+    ~fft_burst_tagger_impl() override;
+    bool start() override;
+    bool stop() override;
 
+    int general_work(int noutput_items,
+                     gr_vector_int& ninput_items,
+                     gr_vector_const_void_star& input_items,
+                     gr_vector_void_star& output_items) override;
 
     /**
      * Returns total number of bursts seen
      *
      * @return uint64_t - number of bursts
      */
-    uint64_t get_n_tagged_bursts();
+    uint64_t get_n_tagged_bursts() override;
 
     /**
      * Resets burst tagger
      */
-    void reset();
-
-    bool stop();
+    void reset() override;
 
     int work(int noutput_items,
              gr_vector_const_void_star& input_items,
              gr_vector_void_star& output_items);
+
+    /**
+     * Sets detection threshold
+     * Unit: dB
+     *
+     * @param threshold - threshold
+     */
+    void set_threshold(float threshold) override;
 
     /**
      * Sets max burst bandwidth
@@ -370,7 +391,8 @@ public:
      *
      * @param bw - bandwidth
      */
-    void set_max_burst_bandwidth(double bw) { d_filter_bandwidth = bw; }
+    void set_max_burst_bandwidth(double bw) override { d_filter_bandwidth = bw; }
+    void preload_noise_floor(double noise_density, bool preload) override;
 };
 
 } // namespace fhss_utils

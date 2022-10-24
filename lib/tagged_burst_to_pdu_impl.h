@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2018, 2019, 2020 National Technology & Engineering Solutions of Sandia, LLC
+ * Copyright 2018-2021 National Technology & Engineering Solutions of Sandia, LLC
  * (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
  * retains certain rights in this software.
  *
@@ -11,9 +11,8 @@
 #define INCLUDED_FHSS_UTILS_TAGGED_BURST_TO_PDU_IMPL_H
 
 #include <gnuradio/blocks/rotator.h>
+#include <gnuradio/fhss_utils/tagged_burst_to_pdu.h>
 #include <gnuradio/filter/fir_filter.h>
-#include <fhss_utils/tagged_burst_to_pdu.h>
-#include <fhss_utils/constants.h>
 #include <boost/lockfree/queue.hpp>
 #include <queue>
 
@@ -79,9 +78,9 @@ struct buffer {
         data.insert(data.end(), d, d + length);
     }
 
-    void add_tags(const std::vector<tag_t>& new_b,
-                  const std::vector<tag_t>& rx_time,
-                  const std::vector<tag_t> gone_b)
+    void add_tags(const std::vector<tag_t> &new_b,
+                  const std::vector<tag_t> &rx_time,
+                  const std::vector<tag_t> &gone_b)
     {
         new_burst_tags.insert(new_burst_tags.end(), new_b.begin(), new_b.end());
         rx_time_tags.insert(rx_time_tags.end(), rx_time.begin(), rx_time.end());
@@ -158,19 +157,6 @@ public:
     // the gnuradio scheduler
     static const size_t d_num_buffers = 5;
 
-    /**
-     * Constructor
-     *
-     * @param decimation -
-     * @param taps -
-     * @param min_burst_time -
-     * @param max_burst_time -
-     * @param relative_center_frequency -
-     * @param relative_span -
-     * @param relative_sample_rate -
-     * @param sample_rate -
-     * @param num_threads -
-     */
     tagged_burst_to_pdu_impl(size_t decimation,
                              const std::vector<float>& taps,
                              float min_burst_time,
@@ -181,26 +167,15 @@ public:
                              float sample_rate,
                              int num_threads);
 
-    /**
-     * Deconstructor
-     */
-    ~tagged_burst_to_pdu_impl();
+    ~tagged_burst_to_pdu_impl() override;
 
-    bool stop();
+    bool stop() override;
 
-    /*uint64_t get_n_dropped_bursts();*/
+    /*uint64_t get_n_dropped_bursts() override;*/
 
-    /**
-     * Processes input streadm
-     *
-     * @param noutput_items -
-     * @param input_items -
-     * @param output_items -
-     * @return int -
-     */
     int work(int noutput_items,
              gr_vector_const_void_star& input_items,
-             gr_vector_void_star& output_items);
+             gr_vector_void_star& output_items) override;
 };
 
 } // namespace fhss_utils

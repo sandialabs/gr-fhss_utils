@@ -7,15 +7,25 @@ category: '[Sandia]/FHSS Utilities'
 parameters:
 -   id: method
     label: Method
-    dtype: int
+    dtype: enum
     default: fhss_utils.RMS
-    options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.COERCE]
-    option_labels: [RMS, Half-Power, Coerce Only]
+    options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.MIDDLE_OUT, fhss_utils.COERCE]
+    option_labels: [RMS, Half-Power, Middle Out, Coerce Only]
 -   id: channel_freqs
     label: Channel Center Frequencies
     dtype: real_vector
     default: '[]'
     hide: part
+-   id: snr_min
+    label: Minimum SNR
+    dtype: float
+    default: 10.0
+    hide: ${ ('none' if (method == "fhss_utils.MIDDLE_OUT") else 'all') }
+-   id: thresh_min
+    label: Min Threshold Rel. Peak
+    dtype: float
+    default: -25.0
+    hide: ${ ('part' if (method == "fhss_utils.MIDDLE_OUT") else 'all') }
 
 inputs:
 -   domain: message
@@ -31,10 +41,17 @@ outputs:
     optional: true
 
 templates:
-    imports: import fhss_utils
-    make: fhss_utils.cf_estimate(${method}, ${channel_freqs})
+    imports: from gnuradio import fhss_utils
+    make: |-
+        fhss_utils.cf_estimate(${method}, ${channel_freqs})
+        % if method == "fhss_utils.MIDDLE_OUT":
+        self.${id}.set_snr_min(${snr_min})
+        self.${id}.set_thresh_min(${thresh_min})
+        % endif
     callbacks:
     - set_freqs(${channel_freqs})
     - set_method(${method})
+    - set_snr_min(${snr_min})
+    - set_thresh_min(${thresh_min})
 
 file_format: 1

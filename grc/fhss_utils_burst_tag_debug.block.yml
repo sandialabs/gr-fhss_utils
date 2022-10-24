@@ -3,7 +3,7 @@ label: Burst Tagger Debug
 category: '[Sandia]/FHSS Utilities'
 
 templates:
-  imports: import fhss_utils
+  imports: from gnuradio import fhss_utils
   make: fhss_utils.burst_tag_debug(${filename}, ${nrows}, ${fft_size}, ${nrows_avg}, ${sample_rate}, ${quality}, ${always_on})
 
 parameters:

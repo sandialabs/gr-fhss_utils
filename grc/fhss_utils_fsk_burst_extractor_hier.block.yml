@@ -104,10 +104,10 @@ parameters:
 -   id: cf_method
     label: Method
     category: Freq. Est.
-    dtype: int
+    dtype: enum
     default: fhss_utils.RMS
-    options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.COERCE]
-    option_labels: [RMS, Half-Power, Coerce Only]
+    options: [fhss_utils.RMS, fhss_utils.HALF_POWER, fhss_utils.COERCE, fhss_utils.MIDDLE_OUT]
+    option_labels: [RMS, Half-Power, Coerce Only, Middle Out]
     hide: part
 -   id: channel_freqs
     label: Channel Center Freqs
@@ -115,6 +115,19 @@ parameters:
     dtype: real_vector
     default: '[]'
     hide: part
+
+-   id: snr_min
+    label: Minimum SNR
+    category: Freq. Est.
+    dtype: float
+    default: 10.0
+    hide: ${ ('none' if (cf_method == "fhss_utils.MIDDLE_OUT") else 'all') }
+-   id: thresh_min
+    label: Min Threshold Rel. Peak
+    category: Freq. Est.
+    dtype: float
+    default: -25.0
+    hide: ${ ('part' if (cf_method == "fhss_utils.MIDDLE_OUT") else 'all') }
 
 
 inputs:
@@ -130,7 +143,7 @@ asserts:
 - ${ decimation % 2 == 0 }
 
 templates:
-    imports: import fhss_utils
+    imports: from gnuradio import fhss_utils
     make: |-
         fhss_utils.fsk_burst_extractor_hier(
             burst_width=${burst_width},
@@ -152,8 +165,15 @@ templates:
             channel_freqs=${channel_freqs},
             n_threads=${n_threads}
         )
+        % if cf_method == "fhss_utils.MIDDLE_OUT":
+        self.${id}.cf_estimate.set_snr_min(${snr_min})
+        self.${id}.cf_estimate.set_thresh_min(${thresh_min})
+        % endif
     callbacks:
     - set_channel_freqs(${channel_freqs})
     - set_cf_method(${cf_method})
+    - set_snr_min(${snr_min})
+    - set_thresh_min(${thresh_min})
+    - set_threshold(${threshold})
 
 file_format: 1

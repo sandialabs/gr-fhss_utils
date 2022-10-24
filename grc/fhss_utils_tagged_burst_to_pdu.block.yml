@@ -51,7 +51,7 @@ outputs:
     id: cpdus
 
 templates:
-    imports: import fhss_utils
+    imports: from gnuradio import fhss_utils
     make: fhss_utils.tagged_burst_to_pdu(${decimation}, ${taps}, ${min_burst_time},
         ${max_burst_time}, ${relative_center_frequency}, ${relative_span}, ${relative_sample_rate},
         ${sample_rate}, ${threads})

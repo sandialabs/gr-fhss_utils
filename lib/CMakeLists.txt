@@ -4,11 +4,13 @@
 # This file is a part of gr-fhss_utils
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
+#
 
 ########################################################################
 # Setup library
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
+
 list(APPEND fhss_utils_sources
     cf_estimate_impl.cc
     fft_burst_tagger_impl.cc
@@ -24,7 +26,6 @@ endif(NOT fhss_utils_sources)
 
 add_library(gnuradio-fhss_utils SHARED ${fhss_utils_sources})
 target_link_libraries(gnuradio-fhss_utils
-                      gnuradio::gnuradio-runtime
                       gnuradio::gnuradio-runtime
                       gnuradio::gnuradio-filter
                       gnuradio::gnuradio-blocks
@@ -43,7 +44,7 @@ if(APPLE)
     )
 endif(APPLE)
 
-set(CMAKE_CXX_FLAGS "-fopenmp -mavx")
+set(CMAKE_CXX_FLAGS "-fopenmp -mavx -fext-numeric-literals")
 
 ########################################################################
 # Install built library files
