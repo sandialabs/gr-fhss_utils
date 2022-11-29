@@ -234,8 +234,6 @@ void tagged_burst_to_pdu_impl::create_new_bursts(const buffer& work_buffer)
 
         if (d_lower_border < relative_frequency && relative_frequency <= d_upper_border) {
             uint64_t id = pmt::to_uint64(pmt::dict_ref(tag.value, PMTCONSTSTR__burst_id(), pmt::PMT_NIL));
-            float magnitude =
-                pmt::to_float(pmt::dict_ref(tag.value, PMTCONSTSTR__magnitude(), pmt::PMT_NIL));
             float center_frequency =
                 pmt::to_float(pmt::dict_ref(tag.value, PMTCONSTSTR__center_frequency(), pmt::PMT_NIL));
             float sample_rate =
@@ -307,7 +305,6 @@ void tagged_burst_to_pdu_impl::create_new_bursts(const buffer& work_buffer)
             burst_data burst = { id,
                                  start_offset,
                                  start_offset - work_buffer.start,
-                                 magnitude,
                                  relative_frequency,
                                  center_frequency,
                                  sample_rate,
@@ -341,8 +338,8 @@ void tagged_burst_to_pdu_impl::create_new_bursts(const buffer& work_buffer)
                 if (d_debug) {
                     GR_LOG_INFO(d_logger,
                                 boost::format("New burst: offset=%lu, id=%lu, "
-                                              "relative_frequency=%f, magnitude=%f") %
-                                    tag.offset % id % relative_frequency % magnitude);
+                                              "relative_frequency=%f") %
+                                    tag.offset % id % relative_frequency);
                 }
             } else {
                 GR_LOG_ERROR(d_logger, "malloc failed!");
