@@ -23,7 +23,6 @@ struct burst_data {
     uint64_t id;
     uint64_t offset;
     uint64_t data_skip;
-    float magnitude;
     float relative_frequency;
     float center_frequency;
     float sample_rate;
