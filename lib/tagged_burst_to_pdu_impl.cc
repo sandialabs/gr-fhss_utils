@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
+#include <boost/format.hpp>
 #include <cstdlib>
 
 namespace gr {

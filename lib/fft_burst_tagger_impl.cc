@@ -16,7 +16,7 @@
 #include <gnuradio/fft/window.h>
 #include <gnuradio/fhss_utils/constants.h>
 #include <gnuradio/io_signature.h>
-
+#include <boost/format.hpp>
 #include "fft_burst_tagger_impl.h"
 
 #include <volk/volk.h>
