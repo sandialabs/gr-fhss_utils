@@ -44,7 +44,12 @@ if(APPLE)
     )
 endif(APPLE)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -mavx -fext-numeric-literals")
+# This is to allow building on Apple Silicon, though removing AVX is not
+# necessary on Intel Macs... Just a quick patch for now
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+if(NOT APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx -fext-numeric-literals")
+endif(APPLE)
 
 ########################################################################
 # Install built library files

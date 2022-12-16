@@ -440,7 +440,11 @@ void tagged_burst_to_pdu_impl::process_data()
     for (size_t i = 0; i < d_num_threads; i++) {
         char name[16] = { 0 };
         snprintf(name, sizeof(name), "t2pdu-worker%02d", omp_get_thread_num());
+#ifdef DARWIN
+        pthread_setname_np(name);
+#else
         pthread_setname_np(pthread_self(), name);
+#endif
     }
 
     while (true) {
