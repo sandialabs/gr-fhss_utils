@@ -16,7 +16,7 @@
 #include <gnuradio/fft/window.h>
 #include <gnuradio/fhss_utils/constants.h>
 #include <gnuradio/io_signature.h>
-
+#include <boost/format.hpp>
 #include "fft_burst_tagger_impl.h"
 
 #include <volk/volk.h>
@@ -502,7 +502,7 @@ void fft_burst_tagger_impl::update_ownership(const pre_burst& pb, const burst& b
 {
     if (pb.start_bin != b.start_bin || pb.stop_bin != b.stop_bin) {
         // There is a chance that we will have two pre-bursts that
-        for (size_t i = pb.start_bin; i <= pb.stop_bin; i++) {
+        for (int i = pb.start_bin; i <= pb.stop_bin; i++) {
             if (d_mask_owners[i].size() == 1) {
                 d_burst_mask_i[i] = ~0;
             }
@@ -514,7 +514,7 @@ void fft_burst_tagger_impl::update_ownership(const pre_burst& pb, const burst& b
                         d_mask_owners[i].uid % pb.id);
             }
         }
-        for (size_t i = b.start_bin; i <= b.stop_bin; i++) {
+        for (int i = b.start_bin; i <= b.stop_bin; i++) {
             d_burst_mask_i[i] = 0;
             d_burst_mask_j[i] = 0;
             if (d_mask_owners[i].push_back(b.id)) {
@@ -529,7 +529,7 @@ void fft_burst_tagger_impl::update_ownership(const pre_burst& pb, const burst& b
             }
         }
     } else {
-        for (size_t i = b.start_bin; i <= b.stop_bin; i++) {
+        for (int i = b.start_bin; i <= b.stop_bin; i++) {
             if (d_mask_owners[i].update(pb.id, b.id)) {
                 GR_LOG_ERROR(d_logger,
                              "Owners::Update - Couldn't find id to update. This should "
@@ -628,9 +628,6 @@ void fft_burst_tagger_impl::create_new_bursts(const gr_complex* input, int fft)
             // Smooth to get max value.  This is safe because of the bounds on search
             // start and stop.
             float max_value = .5 * max_entry[0] + .25 * (max_entry[-1] + max_entry[1]);
-            // How high is this above the noise floor?
-            float snr_est = max_value;
-            float* n = d_baseline_sum_f + b->center_bin;
 
             size_t minIndex = search_start;
             size_t maxIndex = search_stop;
