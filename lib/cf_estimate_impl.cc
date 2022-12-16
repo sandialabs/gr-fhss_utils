@@ -17,7 +17,7 @@
 #include <gnuradio/fft/window.h>
 #include <gnuradio/fhss_utils/constants.h>
 #include <gnuradio/io_signature.h>
-
+#include <boost/format.hpp>
 namespace gr {
 namespace fhss_utils {
 
