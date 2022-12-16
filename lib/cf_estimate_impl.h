@@ -27,6 +27,7 @@ private:
 
     // this block supports a few different estimation methods
     int d_method;
+    std::vector<float> d_channel_freqs;
     float d_snr_min;
     float d_thresh_min;
     std::vector<gr_complex> d_bug;
@@ -51,8 +52,7 @@ private:
      *
      * returns a bool indicating if the burst SNR was below configured minimum
      */
-     bool coerce_frequency(float center_frequency, float sample_rate, float &shift);
-     std::vector<float> d_channel_freqs;
+    bool coerce_frequency(float center_frequency, float sample_rate, float &shift);
 
     /**
      * \brief Return center frequency estimate using the RMS method

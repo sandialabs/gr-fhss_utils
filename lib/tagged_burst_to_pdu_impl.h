@@ -96,30 +96,29 @@ class tagged_burst_to_pdu_impl : public tagged_burst_to_pdu
 private:
     bool d_debug;
     float d_relative_center_frequency;
-    float d_relative_span;
     float d_relative_sample_rate;
-    float d_sample_rate;
     int d_min_burst_size;
     int d_max_burst_size;
     int d_outstanding;
     int d_max_outstanding;
     uint64_t d_n_dropped_bursts;
-    size_t d_block_increment;
     bool d_blocked;
-    size_t d_max_id;
+    size_t d_decimation;
+    std::vector<float> d_taps;
+    boost::lockfree::queue<buffer*> d_write_queue;
+    boost::lockfree::queue<buffer*> d_work_queue;
+    float d_sample_rate;
     int d_num_threads;
 
+    size_t d_block_increment;
+    size_t d_max_id;
     buffer* d_current_buffer;
 
     tag_t d_current_rx_time_tag;
     std::queue<tag_t> d_rx_time_tags;
     std::queue<two_gr_complex> d_alloced_arrays;
-    std::vector<float> d_taps;
-    size_t d_decimation;
     std::vector<filter::kernel::fir_filter_ccf*> d_input_fir_filters;
 
-    boost::lockfree::queue<buffer*> d_write_queue;
-    boost::lockfree::queue<buffer*> d_work_queue;
     boost::thread* process_thread;
 
     float d_lower_border;

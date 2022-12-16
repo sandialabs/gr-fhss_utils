@@ -240,25 +240,29 @@ struct owners {
 class fft_burst_tagger_impl : public fft_burst_tagger
 {
 private:
-    bool d_history_primed;
-    bool d_debug;
-    bool d_pub_debug;
-
-    int d_fft_size;
-    int d_fine_fft_size;
-    int d_lookahead;
-    int d_burst_pre_len;
-    int d_history_size;
-    int d_burst_width;
-    int d_history_index;
-    int d_burst_post_len;
-    int d_max_bursts;
+    float d_center_freq;
     int d_sample_rate;
-    int d_max_burst_len;
-    uint64_t d_abs_fft_index;
+    int d_fft_size;
+    int d_burst_pre_len;
+    int d_lookahead;
     uint64_t d_burst_id;
     uint64_t d_pre_burst_id;
     uint64_t d_n_tagged_bursts;
+    uint64_t d_abs_fft_index;
+    int d_max_burst_len;
+    gr::fft::fft_complex_fwd* d_fft;
+    int d_history_size;
+    bool d_history_primed;
+    int d_history_index;
+    int d_burst_post_len;
+    bool d_debug;
+    bool d_pub_debug;
+    FILE* d_burst_debug_file;
+    std::vector<owners> d_mask_owners;
+
+    int d_fine_fft_size;
+    int d_burst_width;
+    int d_max_bursts;
     uint64_t d_current_peaks;
     uint64_t extra;
     uint64_t d_rel_mag_hist;
@@ -281,12 +285,9 @@ private:
     float* d_ones_f;
     float d_threshold;
     float d_threshold_low;
-    float d_center_freq;
     float d_filter_bandwidth;
 
-    FILE* d_burst_debug_file;
 
-    gr::fft::fft_complex_fwd* d_fft;
     gr::fft::fft_complex_fwd* d_fine_fft;
 #ifdef __USE_MKL__
     DFTI_DESCRIPTOR_HANDLE m_fft;
@@ -297,7 +298,6 @@ private:
     std::list<burst> d_bursts;
     std::list<burst> d_new_bursts;
     std::list<burst> d_gone_bursts;
-    std::vector<owners> d_mask_owners;
     std::vector<moving_average> d_bin_averages;
 
     bool compute_relative_magnitude(void);

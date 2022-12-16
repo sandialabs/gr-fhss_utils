@@ -44,7 +44,7 @@ if(APPLE)
     )
 endif(APPLE)
 
-set(CMAKE_CXX_FLAGS "-fopenmp -mavx -fext-numeric-literals")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -mavx -fext-numeric-literals")
 
 ########################################################################
 # Install built library files

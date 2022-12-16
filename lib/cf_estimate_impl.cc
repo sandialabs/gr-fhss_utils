@@ -183,13 +183,14 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
     std::vector<float> fftm2(fftsize, 0); // stores the result of each fft
     std::vector<float> mags2(fftsize, 0); // stores the accumulated result of each fft
 
-    for (int ii = 0; ii < nffts; ii++) {
+    for (size_t ii = 0; ii < nffts; ii++) {
 
         // TODO: verify VOLK alignment for these calls below....doesnt look like it
 
         // copy in data to the right buffer, pad with zeros
         gr_complex* fft_in = d_ffts[fftpower]->get_inbuf();
-        memset(fft_in, 0, sizeof(gr_complex) * fftsize);
+	std::fill_n(fft_in, fftsize, 0);
+        //memset(fft_in, 0, sizeof(gr_complex) * fftsize);
         memcpy(fft_in, data + offset + ii * fftsize, sizeof(gr_complex) * fftsize);
 
         // apply gain-compensated window in place and get mag^2 FFT output
@@ -200,12 +201,12 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
 
         // accumulate
         //std::transform(mags2.begin(), mags2.end(), fftm2.begin(), mags2.begin(), std::plus<float>());
-        for (int jj=0;jj<fftsize;jj++) mags2[jj] += fftm2[jj];
+        for (size_t jj = 0; jj < fftsize; jj++) mags2[jj] += fftm2[jj];
     }
 
     // normalize accumulated fft bins
     //volk_32f_s32f_multiply_32f(&mags2[0], &mags2[0], 1.0 / nffts, fftsize);
-    for (int ii=0;ii<fftsize;ii++) mags2[ii] /= nffts;
+    for (size_t ii = 0; ii < fftsize; ii++) mags2[ii] /= nffts;
 
     // fft shift
     std::rotate(mags2.begin(), mags2.begin() + fftsize / 2, mags2.end());
@@ -230,7 +231,7 @@ void cf_estimate_impl::pdu_handler(pmt::pmt_t pdu)
     // generate the debug message TODO: make conditional
     d_bug.clear();
     d_bug.reserve(fftsize);
-    for (auto ii = 0; ii < fftsize; ii++)
+    for (size_t ii = 0; ii < fftsize; ii++)
         d_bug.push_back(gr_complex(10 * log10(mags2[ii]), noise_floor_db));
 
     // use the initial bandwidth estimate to determine which FFT bins to process
@@ -460,12 +461,12 @@ bool cf_estimate_impl::middle_out(const std::vector<float> &mags2,
         if (*hi_bin <= threshold) break;
     for (; lo_bin > mags2.begin(); lo_bin--)
         if (*lo_bin <= threshold) break;
-    int hi_idx = peak_idx + std::distance(peak, hi_bin);
-    int lo_idx = peak_idx + std::distance(peak, lo_bin);
+    size_t hi_idx = peak_idx + std::distance(peak, hi_bin);
+    size_t lo_idx = peak_idx + std::distance(peak, lo_bin);
 
-    for (int i = lo_idx; i <= hi_idx; i++)
-        d_bug[i] = std::real(d_bug[i]) + 1j * 10*log10(threshold);
-    d_bug[peak_idx] = std::real(d_bug[peak_idx]) + 1j * 10*log10(*peak);
+    for (size_t i = lo_idx; i <= hi_idx; i++)
+        d_bug[i] = gr_complex(std::real(d_bug[i]), 10*log10(threshold));
+    d_bug[peak_idx] = gr_complex(std::real(d_bug[peak_idx]), 10*log10(*peak));
 
     // bandwidth gets compensated for the linear-interpolated distance to the threshold
     // unless the burst extends to the edge of the PSD
@@ -510,7 +511,7 @@ bool cf_estimate_impl::estimate_pwr(const std::vector<float> &mags2,
     double start_freq = center_frequency - bandwidth / 2.0;
     double stop_freq = center_frequency + bandwidth / 2.0;
     double signal_power = 0.0;
-    for (auto i = 0; i < mags2.size(); i++) {
+    for (size_t i = 0; i < mags2.size(); i++) {
         if ((freq_axis[i] > start_freq) && (freq_axis[i] < stop_freq)) {
             signal_power += mags2[i];
         }

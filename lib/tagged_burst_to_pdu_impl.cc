@@ -175,7 +175,6 @@ int tagged_burst_to_pdu_impl::work(int noutput_items,
                                    gr_vector_void_star& output_items)
 {
     const gr_complex* in = (const gr_complex*)input_items[0];
-    size_t data_index = 0;
 
     // We need to fill up buffers, with overlap.
     size_t i = 0;
@@ -323,8 +322,8 @@ void tagged_burst_to_pdu_impl::create_new_bursts(const buffer& work_buffer)
                                                  (d_max_burst_size + d_block_size));
                 burst.rot_tmp =
                     (gr_complex*)malloc(sizeof(gr_complex) * (d_block_size + 8));
-                memset(burst.rot_tmp + d_block_size, 0, 4 * sizeof(gr_complex));
-                memset(burst.rot_tmp, 0, 4 * sizeof(gr_complex));
+		std::fill_n(burst.rot_tmp + d_block_size, 4, 0);
+		std::fill_n(burst.rot_tmp, 4, 0);
                 burst.rot_tmp += ROT_TMP_OFFSET;
             }
             float phase_inc = 2 * M_PI * -relative_frequency;
