@@ -1104,11 +1104,10 @@ int fft_burst_tagger_impl::general_work(int noutput_items,
         usleep(100);
     }
 
-    consume_each(consumed);
-
     if (produced) {
         memcpy(out, in, sizeof(gr_complex) * produced);
     }
+    consume_each(consumed);
     return produced;
 }
 
