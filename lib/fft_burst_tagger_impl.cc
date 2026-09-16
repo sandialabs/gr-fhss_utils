@@ -173,7 +173,7 @@ fft_burst_tagger_impl::fft_burst_tagger_impl(float center_freq,
 
     memset(d_baseline_sum_f, 0, sizeof(float) * d_fft_size);
     memset(d_magnitude_shifted_f, 0, sizeof(float) * d_fft_size);
-    memset(d_fine_magnitude_shifted_f, 0, sizeof(float) * d_fft_size);
+    memset(d_fine_magnitude_shifted_f, 0, sizeof(float) * d_fine_fft_size);
     memset(d_relative_magnitude_f, 0, sizeof(float) * d_fft_size);
     extra = 0;
 
